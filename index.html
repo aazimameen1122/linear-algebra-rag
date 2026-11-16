@@ -88,6 +88,18 @@ footer{color:#5d5778;font-size:12.5px;text-align:center;padding:22px 0 4px}
 .composer input::placeholder{color:#6f6890}
 .composer input:focus{outline:none}
 .bubble .src{margin-top:9px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+.bubble .atext p{margin:0 0 8px;white-space:normal;line-height:1.55}
+.bubble .atext p:last-child{margin-bottom:0}
+.bubble .ah{font-size:16.5px;font-weight:700;color:#fff;margin:2px 0 9px;line-height:1.35}
+.bubble .ah2{font-size:15px;font-weight:700;color:#ddd3fe;margin:13px 0 7px;line-height:1.35}
+.bubble .atext ul,.bubble .atext ol{margin:2px 0 9px;padding-left:20px;line-height:1.55}
+.bubble .atext li{margin-bottom:4px}
+.bubble .atext code{background:#17122b;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#f0abfc}
+.bubble .atext pre{background:#0a0817;border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;margin:4px 0 10px}
+.bubble .atext pre code{background:none;border:0;padding:0;color:#e9e4ff;font-size:12.5px;line-height:1.5;display:block;white-space:pre}
+.bubble .atext table{border-collapse:collapse;margin:4px 0 10px;font-size:13px;width:100%}
+.bubble .atext th,.bubble .atext td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+.bubble .atext th{color:#ddd3fe;background:#17122b}
 .clearbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--dim);width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:14px}
 .clearbtn:hover{color:#fff;border-color:var(--purple)}
 .chathead .online{margin-left:8px}
@@ -783,16 +795,117 @@ const GREETING = threadEl.innerHTML;
 function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function scrollThread(){threadEl.scrollTop = threadEl.scrollHeight;}
 function appendUser(t){threadEl.innerHTML += `<div class="msg user"><div class="bubble"><p>${esc(t)}</p></div><span class="uavatar">👤</span></div>`;scrollThread();}
-function appendBot(meta,text,refused,sources){threadEl.innerHTML += `<div class="msg bot"><span class="avatar">∑</span><div class="bubble${refused ? " refused" : ""}">${meta ? `<div class="meta">${esc(meta)}</div>` : ""}<p>${esc(text)}</p>${sources && sources.length ? `<div class="src">Sources: ${esc(sources.join(" · "))}</div>` : ""}</div></div>`;scrollThread();}
+function fmtInline(s){return esc(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");}
+function fmtText(t){
+  const lines = String(t).split("\n");
+  let html = "", list = null, pre = false, table = [];
+  const closeList = () => { if (list) { html += "</" + list + ">"; list = null; } };
+  const flushTable = () => { if (!table.length) return; const rows = table.filter(r => !/^\|[\s\-|]+\|$/.test(r)); if (rows.length) { html += "<table>" + rows.map((r,i) => { const cells = r.replace(/^\||\|$/g,"").split("|").map(c => c.trim()); const tag = i === 0 ? "th" : "td"; return "<tr>" + cells.map(c => `<${tag}>${fmtInline(c)}</${tag}>`).join("") + "</tr>"; }).join("") + "</table>"; } table = []; };
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/,"");
+    if (/^```/.test(line)) { if (pre) { html += "</code></pre>"; pre = false; } else { closeList(); flushTable(); html += "<pre><code>"; pre = true; } continue; }
+    if (pre) { html += esc(line) + "\n"; continue; }
+    if (/^\|.*\|$/.test(line.trim())) { closeList(); table.push(line.trim()); continue; }
+    flushTable();
+    if (!line.trim()) { closeList(); continue; }
+    if (/^##\s+/.test(line)) { closeList(); html += `<div class="ah2">${fmtInline(line.replace(/^##\s+/,""))}</div>`; continue; }
+    if (/^#\s+/.test(line)) { closeList(); html += `<div class="ah">${fmtInline(line.replace(/^#\s+/,""))}</div>`; continue; }
+    const bul = line.match(/^\s*[-•*]\s+(.*)$/);
+    if (bul) { if (list !== "ul") { closeList(); html += "<ul>"; list = "ul"; } html += `<li>${fmtInline(bul[1])}</li>`; continue; }
+    const num = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (num) { if (list !== "ol") { closeList(); html += "<ol>"; list = "ol"; } html += `<li>${fmtInline(num[1])}</li>`; continue; }
+    closeList();
+    html += `<p>${fmtInline(line)}</p>`;
+  }
+  if (pre) html += "</code></pre>";
+  closeList(); flushTable();
+  return html;
+}
+function appendBot(meta,text,refused,sources){threadEl.innerHTML += `<div class="msg bot"><span class="avatar">∑</span><div class="bubble${refused ? " refused" : ""}">${meta ? `<div class="meta">${esc(meta)}</div>` : ""}<div class="atext">${fmtText(text)}</div>${sources && sources.length ? `<div class="src">Sources: ${esc(sources.join(" · "))}</div>` : ""}</div></div>`;scrollThread();}
 function appendTyping(){threadEl.innerHTML += `<div class="msg bot" id="typing"><span class="avatar">∑</span><div class="bubble"><p class="typingdots">Thinking…</p></div></div>`;scrollThread();}
 function removeTyping(){const t = document.getElementById("typing"); if (t) t.remove();}
+function numpyDetAnswer(){
+  return [
+    "# How to Calculate the Determinant of a Matrix Using NumPy",
+    "",
+    "A **determinant** is a special number calculated from a square matrix. It helps us determine whether the matrix is invertible: if the determinant is not zero, the inverse exists.",
+    "",
+    "In Python, NumPy provides two functions:",
+    "1. `numpy.linalg.slogdet()` — numerically stable, best for large matrices",
+    "2. `numpy.linalg.det()` — direct and simple",
+    "",
+    "## 1. Using numpy.linalg.slogdet()",
+    "This method is useful for large matrices because it helps prevent numerical overflow and underflow.",
+    "",
+    "**Python program:**",
+    "```",
+    "import numpy as np",
+    "",
+    "A = np.array([[50, 29], [30, 44]])",
+    "",
+    "sign, logdet = np.linalg.slogdet(A)",
+    "res = sign * np.exp(logdet)",
+    "",
+    "print(res)",
+    "```",
+    "**Output:** `1330.0`",
+    "",
+    "**Explanation:**",
+    "- `sign` gives the sign of the determinant.",
+    "- `logdet` gives the logarithm of the absolute value of the determinant.",
+    "- `np.exp(logdet)` converts the logarithm back.",
+    "- `res` calculates the final determinant: sign × exp(logdet).",
+    "",
+    "**Mathematical calculation:**",
+    "|A| = (50 × 44) − (29 × 30) = 2200 − 870 = **1330**",
+    "",
+    "## 2. Using numpy.linalg.det()",
+    "This is the simplest and most direct method to calculate the determinant of a matrix.",
+    "",
+    "**Python program:**",
+    "```",
+    "import numpy as np",
+    "",
+    "A = np.array([[1, 2], [3, 4]])",
+    "",
+    "res = np.linalg.det(A)",
+    "",
+    "print(res)",
+    "```",
+    "**Output:** `-2.0`",
+    "",
+    "**Explanation:**",
+    "- The `np.linalg.det(A)` function directly calculates the determinant of matrix A.",
+    "",
+    "**Mathematical calculation:**",
+    "|A| = (1 × 4) − (2 × 3) = 4 − 6 = **-2**",
+    "",
+    "## Difference between slogdet() and det()",
+    "| Point | slogdet() | det() |",
+    "|---|---|---|",
+    "| Stability | Numerically stable for large values | Direct determinant calculation |",
+    "| Returns | Sign and log determinant separately | Returns the determinant directly |",
+    "| Best for | Very large or very small determinants | Ordinary calculations |",
+    "",
+    "**Conclusion:** Use `det()` for ordinary matrices, and `slogdet()` when the determinant may be very large or very small, where numerical stability matters."
+  ].join("\n");
+}
+function structureTheory(top){
+  const grouped = top.text.trim().split(/(?<=\.)\s+(?=[A-Z0-9(])/).reduce((acc, s, i) => { if (i % 2 === 0) acc.push(s); else acc[acc.length - 1] += " " + s; return acc; }, []).join("\n\n");
+  return "# " + top.title + "\n\n" + grouped.replace(/\s+(Example:|Code:|Output:|Formula:)/g, "\n\n**$1** ");
+}
 function answerQuery(q){
   const calc = tryCalc(q);
   if (calc) { if (typeof calc === "string") return {meta:"Calculation", text:calc}; return {meta:calc.title, text:calc.text}; }
+  if (/slogdet/i.test(q) || (/numpy|python/i.test(q) && /determinant|\bdet\b/i.test(q))) {
+    const res0 = idx.answer(q);
+    const top0 = res0.hits && res0.hits[0];
+    return {meta:"NumPy · Determinant of a Matrix", text:numpyDetAnswer(), chunk: top0 || null, sources: top0 ? ["Module 2 · Determinant using slogdet", "Module 2 · Determinant using numpy det"] : []};
+  }
   const res = idx.answer(q);
   if (res.refused) return {refused:true, meta:"", text:"This is not in my Linear Algebra data, so I will not guess. Ask any Linear Algebra topic — matrix, vector, eigenvalue, vector space, transformation, anything."};
   const top = res.hits[0];
-  return {meta: top.module + " · " + top.title, text: top.text, chunk: top, sources: res.hits.slice(1).map(h => h.module + " · " + h.title)};
+  return {meta: top.module + " · " + top.title, text: structureTheory(top), chunk: top, sources: res.hits.slice(1).map(h => h.module + " · " + h.title)};
 }
 // ---------- tutor state: follow-ups + practice ----------
 let lastChunk = null, lastMeta = "", lastPractice = null;
@@ -836,13 +949,12 @@ async function explainWithAI(btn){
   if (!lastAnswer) return;
   if (typeof window.__qwenExplain !== "function") { appendBot("AI explanation", "The AI module could not load. The answer above is still complete."); return; }
   btn.disabled = true; const orig = btn.textContent; btn.textContent = "Loading AI model…";
-  appendTyping();
   try {
     const text = await window.__qwenExplain(lastAnswer.q, lastAnswer.text, pct => { btn.textContent = pct != null ? ("Downloading model… " + pct + "%") : "Loading AI model…"; });
-    removeTyping(); btn.disabled = false; btn.textContent = orig;
+    btn.disabled = false; btn.textContent = orig;
     appendBot("AI explanation · Qwen2.5-0.5B, runs in your browser", text);
   } catch (e) {
-    removeTyping(); btn.disabled = false; btn.textContent = orig;
+    btn.disabled = false; btn.textContent = orig;
     appendBot("AI explanation", "The AI model could not run on this device or browser, so no explanation was generated. The answer above is still complete." + (e && e.message ? " (Error: " + String(e.message).slice(0, 160) + ")" : ""));
   }
 }
@@ -1108,16 +1220,20 @@ async function loadQwen(onProgress) {
     qwenPromise = (async () => {
       const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2/+esm");
       env.allowLocalModels = false;
-      const makeOpts = () => ({ dtype: "q4", progress_callback: p => { if (onProgress) onProgress(p && p.status === "progress" && p.total ? Math.round(p.loaded / p.total * 100) : null); } });
-      let gen;
-      if (navigator.gpu) {
-        try { gen = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", { ...makeOpts(), device: "webgpu" }); }
-        catch (e) { gen = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", makeOpts()); }
-      } else {
-        gen = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", makeOpts());
+      const progress_callback = p => { if (onProgress) onProgress(p && p.status === "progress" && p.total ? Math.round(p.loaded / p.total * 100) : null); };
+      // Only try WebGPU when an adapter actually exists — some browsers expose navigator.gpu but cannot create an adapter, and asking for webgpu then fails hard instead of falling back.
+      let gpuOk = false;
+      if (navigator.gpu) { try { gpuOk = !!(await navigator.gpu.requestAdapter()); } catch (e) { gpuOk = false; } }
+      const attempts = [];
+      if (gpuOk) attempts.push({ device: "webgpu", dtype: "q4f16" });
+      attempts.push({ device: "wasm", dtype: "q4" });
+      attempts.push({ device: "wasm", dtype: "int8" });
+      let lastErr = null;
+      for (const a of attempts) {
+        try { qwenGen = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", { ...a, progress_callback }); return qwenGen; }
+        catch (e) { lastErr = e; }
       }
-      qwenGen = gen;
-      return gen;
+      throw lastErr || new Error("no backend available");
     })();
     qwenPromise.catch(() => { qwenPromise = null; qwenGen = null; });
   }
@@ -1126,10 +1242,10 @@ async function loadQwen(onProgress) {
 window.__qwenExplain = async function (question, context, onProgress) {
   const gen = await loadQwen(onProgress);
   const messages = [
-    { role: "system", content: "You are a simple, clear tutor. Explain ONLY using the context given. Do not add facts that are not in the context. Use plain English and short sentences. Give one small example only if the context has one. Keep it under 120 words." },
-    { role: "user", content: "Question: " + question + "\n\nContext:\n" + context + "\n\nExplain this simply:" }
+    { role: "system", content: "You are a simple, clear tutor. Answer ONLY using the context given. Do not add facts that are not in the context. Use plain English and short sentences. Format the answer in this structure, using markdown: first a line starting with '# ' and the topic name, then a '**Definition:**' line, then a '## Step-by-step' section with numbered steps, then an '**Example:**' section only if the context has an example or code (show code in a ``` code block), then a '**Key points:**' section with '-' bullet points, and finally a '**Conclusion:**' line. Keep it under 250 words." },
+    { role: "user", content: "Question: " + question + "\n\nContext:\n" + context + "\n\nGive a structured answer:" }
   ];
-  const out = await gen(messages, { max_new_tokens: 150, do_sample: false });
+  const out = await gen(messages, { max_new_tokens: 260, do_sample: false });
   let t = out && out[0] && out[0].generated_text;
   if (Array.isArray(t)) t = t.length ? t[t.length - 1].content : "";
   t = String(t || "").trim();
