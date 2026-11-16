@@ -945,7 +945,7 @@ async function ocrImage(file){
   previewEl.style.display = "block";
   ocrBoxEl.style.display = "none"; ocrGoEl.style.display = "none";
   if (typeof Tesseract === "undefined") { ocrStatusEl.textContent = "The OCR library could not load — internet is required the first time. Turn on the net and select the photo again."; return; }
-  ocrStatusEl.textContent = "Photo padh raha hoon (OCR chal raha hai)…";
+  ocrStatusEl.textContent = "Reading the photo (OCR is running)…";
   progEl.style.display = "block"; progEl.value = 0;
   try {
     const bmp = await createImageBitmap(file);
@@ -962,7 +962,7 @@ async function ocrImage(file){
     const img = cx.getImageData(0, 0, cv.width, cv.height), d = img.data;
     for (let i = 0; i < d.length; i += 4) { const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; const v = g > 150 ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; }
     cx.putImageData(img, 0, 0);
-    const res = await Tesseract.recognize(cv, "eng", { logger: m => { if (m.status === "recognizing text") progEl.value = m.progress; } });
+    const res = await Tesseract.recognize(cv, "eng", { workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/worker.min.js", corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0", langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int", logger: m => { if (m.status === "recognizing text") progEl.value = m.progress; } });
     const text = (res.data.text || "").trim();
     progEl.style.display = "none";
     if (!text) { ocrStatusEl.textContent = "No text could be read from this photo. Try a clear, straight photo."; return; }
