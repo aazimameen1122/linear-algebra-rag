@@ -839,13 +839,12 @@ async function explainWithAI(btn){
   appendTyping();
   try {
     const text = await window.__qwenExplain(lastAnswer.q, lastAnswer.text, pct => { btn.textContent = pct != null ? ("Downloading model… " + pct + "%") : "Loading AI model…"; });
-    removeTyping();
+    removeTyping(); btn.disabled = false; btn.textContent = orig;
     appendBot("AI explanation · Qwen2.5-0.5B, runs in your browser", text);
   } catch (e) {
-    removeTyping();
-    appendBot("AI explanation", "The AI model could not run on this device or browser, so no explanation was generated. The answer above is still complete.");
+    removeTyping(); btn.disabled = false; btn.textContent = orig;
+    appendBot("AI explanation", "The AI model could not run on this device or browser, so no explanation was generated. The answer above is still complete." + (e && e.message ? " (Error: " + String(e.message).slice(0, 160) + ")" : ""));
   }
-  btn.disabled = false; btn.textContent = orig;
 }
 function showAnswer(a){ appendBot(a.meta, a.text, a.refused, a.sources); if (a && a.chunk && a.text) { lastAnswer = {q: lastQuestion, text: a.text, meta: a.meta}; appendAiButton(); } }
 function ask(q){ if(!q || !q.trim()) return; lastQuestion = q; appendUser(q);
@@ -1107,7 +1106,7 @@ async function loadQwen(onProgress) {
   if (qwenGen) return qwenGen;
   if (!qwenPromise) {
     qwenPromise = (async () => {
-      const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2");
+      const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2/+esm");
       env.allowLocalModels = false;
       const makeOpts = () => ({ dtype: "q4", progress_callback: p => { if (onProgress) onProgress(p && p.status === "progress" && p.total ? Math.round(p.loaded / p.total * 100) : null); } });
       let gen;
@@ -1130,7 +1129,7 @@ window.__qwenExplain = async function (question, context, onProgress) {
     { role: "system", content: "You are a simple, clear tutor. Explain ONLY using the context given. Do not add facts that are not in the context. Use plain English and short sentences. Give one small example only if the context has one. Keep it under 120 words." },
     { role: "user", content: "Question: " + question + "\n\nContext:\n" + context + "\n\nExplain this simply:" }
   ];
-  const out = await gen(messages, { max_new_tokens: 180, do_sample: false });
+  const out = await gen(messages, { max_new_tokens: 150, do_sample: false });
   let t = out && out[0] && out[0].generated_text;
   if (Array.isArray(t)) t = t.length ? t[t.length - 1].content : "";
   t = String(t || "").trim();
