@@ -1242,7 +1242,7 @@ async function loadQwen(onProgress) {
 window.__qwenExplain = async function (question, context, onProgress) {
   const gen = await loadQwen(onProgress);
   const messages = [
-    { role: "system", content: "You are a simple, clear tutor. Answer ONLY using the context given. Do not add facts that are not in the context. Use plain English and short sentences. Format the answer in this structure, using markdown: first a line starting with '# ' and the topic name, then a '**Definition:**' line, then a '## Step-by-step' section with numbered steps, then an '**Example:**' section only if the context has an example or code (show code in a ``` code block), then a '**Key points:**' section with '-' bullet points, and finally a '**Conclusion:**' line. Keep it under 250 words." },
+    { role: "system", content: "You are a simple, clear tutor. Answer ONLY using the context given. Do not add facts that are not in the context, do not contradict the context, and do not invent examples — use an example only if the context has one, otherwise skip the example. Write maths in plain text only (write A x = lambda x, never LaTeX, never \\[ \\] or \\begin). Use plain English and short sentences. Format with markdown: first a line starting with '# ' and the topic name, then a '**Definition:**' line, then a '## In simple words' section of 2-3 short numbered points, then a '**Key points:**' section with '-' bullet points, and finally a '**Conclusion:**' line. Keep the whole answer under 160 words so it always finishes." },
     { role: "user", content: "Question: " + question + "\n\nContext:\n" + context + "\n\nGive a structured answer:" }
   ];
   const out = await gen(messages, { max_new_tokens: 260, do_sample: false });
