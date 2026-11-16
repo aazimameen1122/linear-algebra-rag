@@ -120,6 +120,7 @@ footer{color:#5d5778;font-size:12.5px;text-align:center;padding:22px 0 4px}
 #ocrbox{width:100%;margin:10px 0 0;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:10px;font-family:inherit;display:none;background:var(--panel2);color:var(--ink)}
 #ocrrotate{margin:9px 0 0 8px;padding:10px 16px;font-size:13.5px;font-weight:600;border-radius:999px;background:var(--panel3);border:1px solid var(--line2);color:var(--ink2);cursor:pointer;font-family:inherit}
 #ocrgo{display:none;margin-top:9px;padding:10px 18px;font-size:14px;font-weight:650;border:0;border-radius:999px;background:var(--grad);color:#fff;cursor:pointer;font-family:inherit}
+#gemkey{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);font-family:inherit;font-size:12.5px}
 label.photobtn{flex:0 0 40px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:12px;background:var(--panel3);border:1px solid var(--line);cursor:pointer}
 label.photobtn:hover{border-color:var(--purple)}
 select#imgop{flex:0 0 auto;max-width:104px;padding:9px 6px;font-size:12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;background:var(--panel3);color:var(--ink2)}
@@ -146,6 +147,7 @@ select#imgop{flex:0 0 auto;max-width:104px;padding:9px 6px;font-size:12px;border
     <b>Learn Smarter</b><span>with AI</span>
   </div>
   <div class="sfoot">v1.0.0</div>
+<div class="sidecard"><h4>AI Photo Reading</h4><p>By default photos are read by Tesseract OCR. For chat-model level reading, add your free Gemini API key (from aistudio.google.com) — it is saved only in your browser, never in the website code.</p><input type="password" id="gemkey" placeholder="Paste Gemini API key" autocomplete="off"><button class="addnotes" id="gemsave" style="margin-top:8px">Save key</button><p id="gemmsg" style="font-size:11.5px;color:var(--faint);margin:7px 0 0"></p></div>
 </aside>
 <div class="center">
   <header class="topbar">
@@ -936,6 +938,27 @@ function askImageText(text){
   const a = answerQuery(q);
   appendBot(a.meta, a.text, a.refused);
 }
+
+// ---------- AI photo reading (Gemini vision, optional user key) ----------
+const gemKeyEl = document.getElementById("gemkey");
+const gemMsgEl = document.getElementById("gemmsg");
+function getGemKey(){ try { return localStorage.getItem("larag_gemini_key") || ""; } catch (e) { return ""; } }
+if (gemKeyEl && getGemKey()) { gemKeyEl.value = getGemKey(); if (gemMsgEl) gemMsgEl.textContent = "Key saved — photos will be read by Gemini AI."; }
+const gemSaveEl = document.getElementById("gemsave");
+if (gemSaveEl) gemSaveEl.addEventListener("click", () => { const k = (gemKeyEl.value || "").trim(); try { if (k) localStorage.setItem("larag_gemini_key", k); else localStorage.removeItem("larag_gemini_key"); } catch (e) {} if (gemMsgEl) gemMsgEl.textContent = k ? "Key saved — photos will be read by Gemini AI." : "Key removed — photos will be read by Tesseract OCR."; });
+async function geminiReadPhoto(file){
+  const key = getGemKey(); if (!key) return null;
+  const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+  const b64 = String(dataUrl).split(",")[1]; if (!b64) return null;
+  const prompt = "Transcribe ALL text and numbers in this photo exactly as written. If the photo contains a matrix, also write the matrix in the format [[a,b],[c,d]]. If it contains equations, write them plainly like 2x + 3y = 8. Only transcribe - do not solve or explain anything.";
+  const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type || "image/jpeg", data: b64 } }] }] }) });
+  if (!resp.ok) throw new Error("gemini " + resp.status);
+  const j = await resp.json();
+  const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+  const t = parts.map(x => x.text || "").join("\n").trim();
+  return t || null;
+}
+
 let lastFile = null, rotAngle = 0;
 async function ocrImage(file){
   if (!file) return;
@@ -945,6 +968,13 @@ async function ocrImage(file){
   threadEl.innerHTML += `<div class="msg user"><div class="bubble" style="padding:6px"><img src="${objUrl}" alt="Question photo" style="max-width:230px;width:100%;border-radius:10px;display:block"></div><span class="uavatar">👤</span></div>`;
   scrollThread();
   appendTyping();
+  if (getGemKey()) {
+    try {
+      const gt = await geminiReadPhoto(file);
+      if (gt) { ocrBoxEl.value = gt; removeTyping(); askImageText(gt); return; }
+      appendBot("", "Gemini AI could not read this photo, so Tesseract OCR was used instead.");
+    } catch (e) { appendBot("", "Gemini AI reading failed (check the key or the internet) - Tesseract OCR was used instead."); }
+  }
   if (typeof Tesseract === "undefined") { removeTyping(); appendBot("Photo", "The OCR library could not load — internet is required the first time. Turn on the net and select the photo again."); return; }
   progEl.value = 0;
   try {
