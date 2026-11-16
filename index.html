@@ -967,7 +967,8 @@ async function ocrImage(file){
     progEl.style.display = "none";
     if (!text) { ocrStatusEl.textContent = "No text could be read from this photo. Try a clear, straight photo."; return; }
     const conf = Math.round(res.data.confidence || 0);
-    ocrStatusEl.textContent = "Text read from the photo (OCR confidence: " + conf + "%)" + (conf < 70 ? " — confidence is low, check the text carefully and correct it:" : " — if anything is wrong, correct it and press the button:");
+    ocrStatusEl.textContent = "Text read from the photo (OCR confidence: " + conf + "%)" + (conf < 70 ? " — confidence is low, so the answer below may use misread numbers. If anything looks wrong, correct the text and press 'Answer this text' again:" : " — the answer is below. If anything is wrong, correct the text and press 'Answer this text' again:");
+    askImageText(text);
     ocrBoxEl.value = text; ocrBoxEl.style.display = "block"; ocrGoEl.style.display = "inline-block";
   } catch (err) { progEl.style.display = "none"; ocrStatusEl.textContent = "There was a problem with OCR. Please try again."; }
 }
