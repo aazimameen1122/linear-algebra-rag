@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Algebra RAG Bot</title>
+<style>
+:root{--bg:#08070f;--side:#0c0a18;--panel:#121022;--panel2:#17142c;--panel3:#1d1936;--line:#262040;--line2:#372e5e;--ink:#edebff;--ink2:#c9c4e6;--dim:#9a94b8;--purple:#8b5cf6;--purple2:#a855f7;--grad:linear-gradient(135deg,#7c3aed,#a855f7)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(700px 380px at 42% -80px,rgba(139,92,246,.16),transparent 70%),radial-gradient(500px 300px at 95% 10%,rgba(168,85,247,.08),transparent 70%)}
+::selection{background:rgba(139,92,246,.4)}
+a{color:inherit;text-decoration:none}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 402px;height:100vh;position:relative}
+/* ---------- sidebar ---------- */
+.side{background:var(--side);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.sbrand{display:flex;align-items:center;gap:11px;padding:2px 8px 20px}
+.sbrand .cubeic{flex:0 0 38px}
+.sbrand b{display:block;font-size:15.5px;line-height:1.2;letter-spacing:-.01em}
+.sbrand span{display:block;font-size:13px;color:var(--dim)}
+nav{display:flex;flex-direction:column;gap:4px}
+nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink2);font-size:14.5px;font-weight:550}
+nav a svg{flex:0 0 20px}
+nav a:hover{background:var(--panel2);color:var(--ink)}
+nav a.active{background:linear-gradient(90deg,rgba(124,58,237,.85),rgba(168,85,247,.55));color:#fff;box-shadow:0 6px 18px rgba(124,58,237,.35)}
+.learncard{margin-top:auto;background:linear-gradient(160deg,#1d1440,#120e26);border:1px solid var(--line2);border-radius:16px;padding:18px 14px;text-align:center}
+.learncard b{display:block;font-size:14.5px;margin-top:8px}
+.learncard span{font-size:13px;color:var(--dim)}
+.sfoot{color:#5d5778;font-size:12px;padding:12px 8px 0}
+/* ---------- center ---------- */
+.center{overflow-y:auto;padding:0 34px 30px;min-width:0}
+.topbar{display:flex;gap:14px;align-items:center;padding:20px 0 6px;position:sticky;top:0;background:linear-gradient(180deg,var(--bg) 78%,transparent);z-index:4}
+.search{flex:1;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:10px 16px}
+.search input{flex:1;background:transparent;border:0;color:var(--ink);font-size:14.5px;font-family:inherit;min-width:0}
+.search input::placeholder{color:#6f6890}
+.search input:focus{outline:none}
+.search:focus-within{border-color:var(--line2)}
+kbd{font-family:inherit;font-size:11.5px;color:var(--dim);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 7px;background:var(--panel2);white-space:nowrap}
+.getstarted{background:var(--grad);color:#fff;border:0;font-family:inherit;font-size:14.5px;font-weight:650;padding:12px 20px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(124,58,237,.4);white-space:nowrap}
+.getstarted:hover{filter:brightness(1.1)}
+.hero{display:flex;gap:18px;align-items:center;padding:30px 0 8px}
+.herotext{flex:1.25;min-width:0}
+h1{font-size:56px;line-height:1.06;letter-spacing:-.03em;margin:0 0 16px;font-weight:800}
+h1 em{font-style:normal;background:linear-gradient(92deg,#a78bfa,#d946ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .spark{font-size:30px;vertical-align:top}
+.sub{font-size:17px;color:var(--ink2);margin:0 0 14px;max-width:430px}
+.checks{color:var(--ink2);font-size:14.5px;margin:0 0 22px}
+.checks b{color:#a78bfa;font-weight:700}
+.herobtns{display:flex;gap:12px;flex-wrap:wrap}
+.primary{background:var(--grad);color:#fff;border:0;font-family:inherit;font-size:15px;font-weight:650;padding:13px 22px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(124,58,237,.4)}
+.primary:hover{filter:brightness(1.1)}
+.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line2);font-family:inherit;font-size:15px;font-weight:600;padding:13px 22px;border-radius:999px;cursor:pointer}
+.ghost:hover{border-color:var(--purple)}
+.herocube{flex:1;text-align:center;min-width:230px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+.fcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px}
+.fcard .fic{width:42px;height:42px;border-radius:12px;background:rgba(139,92,246,.16);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.fcard b{display:block;font-size:15px;margin-bottom:5px}
+.fcard span{font-size:13px;color:var(--dim);line-height:1.45;display:block}
+.topics{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.topicshead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.topicshead h3{margin:0;font-size:16px}
+.topicshead span{font-size:13px;color:var(--purple2)}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{background:var(--panel3);border:1px solid var(--line);color:var(--ink2);padding:8px 15px;font-size:13.5px;border-radius:999px;cursor:pointer;font-family:inherit}
+.chip:hover{border-color:var(--purple);color:#fff}
+.tip{margin-top:16px;background:linear-gradient(90deg,rgba(124,58,237,.22),rgba(168,85,247,.10));border:1px solid var(--line2);border-radius:14px;padding:14px 18px;font-size:13.5px;color:var(--ink2)}
+.tip b{color:#d8ccff}
+footer{color:#5d5778;font-size:12.5px;text-align:center;padding:22px 0 4px}
+/* ---------- chat panel ---------- */
+.chat{background:#0d0b1a;border-left:1px solid var(--line);display:flex;flex-direction:column;height:100vh;min-width:0}
+.chathead{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-size:15px}
+.chathead .online{margin-left:auto;font-size:12.5px;color:#b9f5d0;display:flex;align-items:center;gap:6px}
+.chathead .online i{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 8px #22c55e}
+.status{margin:0;padding:7px 18px 0;font-size:12px;color:var(--dim)}
+.thread{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:9px;align-items:flex-start;max-width:100%}
+.msg .bubble{background:var(--panel3);border:1px solid var(--line);border-radius:16px 16px 16px 5px;padding:12px 14px;font-size:14.5px;color:var(--ink);max-width:88%}
+.msg .bubble p{margin:0;white-space:pre-wrap}
+.msg .avatar{flex:0 0 30px;width:30px;height:30px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px}
+.msg.user{align-self:flex-end;flex-direction:row}
+.msg.user .bubble{background:var(--grad);border:0;border-radius:16px 16px 5px 16px;color:#fff}
+.msg.user .uavatar{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#2c2750;display:flex;align-items:center;justify-content:center;font-size:14px}
+.meta{display:flex;align-items:center;gap:7px;font-size:11px;color:#b7aef0;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.bubble.refused{background:#1c1a13;border:1.5px dashed #8a6d3b;color:#e8d9b0}
+.composer{margin:12px 14px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:8px;display:flex;gap:8px;align-items:center}
+.composer:focus-within{border-color:var(--line2)}
+.composer input{flex:1;background:transparent;border:0;color:var(--ink);font-size:14.5px;font-family:inherit;padding:9px 6px;min-width:0}
+.composer input::placeholder{color:#6f6890}
+.composer input:focus{outline:none}
+.bubble .src{margin-top:9px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+.clearbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--dim);width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:14px}
+.clearbtn:hover{color:#fff;border-color:var(--purple)}
+.chathead .online{margin-left:8px}
+.typingdots{animation:tpulse 1s ease-in-out infinite}
+@keyframes tpulse{50%{opacity:.35}}
+.addnotes{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink2);font-size:14.5px;font-weight:550;cursor:pointer;border:1px dashed var(--line2);margin-top:14px}
+.addnotes:hover{background:var(--panel2);color:var(--ink)}
+.notehint{font-size:12px;color:var(--dim);padding:8px 12px 0;margin:0;line-height:1.5}
+.send{flex:0 0 40px;width:40px;height:40px;border:0;border-radius:12px;background:var(--grad);color:#fff;font-size:16px;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.4)}
+.send:hover{filter:brightness(1.12)}
+@media(max-width:1220px){.app{grid-template-columns:74px minmax(0,1fr) 360px}.sbrand div,.learncard b,.learncard span,nav a span,.sfoot{display:none}.sbrand{justify-content:center;padding-bottom:14px}nav a{justify-content:center}.features{grid-template-columns:1fr 1fr}h1{font-size:44px}}
+@media(max-width:880px){
+ .app{display:block;height:auto}
+ .side{flex-direction:row;align-items:center;padding:12px 16px;border-right:0;border-bottom:1px solid var(--line)}
+ .sbrand{padding:0}.sbrand div{display:block}nav,.learncard,.sfoot{display:none}
+ .center{overflow:visible;padding:0 18px 10px}
+ .hero{flex-direction:column;align-items:flex-start;padding-top:22px}
+ .herocube{align-self:center}
+ h1{font-size:40px}
+ .features{grid-template-columns:1fr 1fr}
+ .chat{height:82vh;border-left:0;border-top:1px solid var(--line);margin:8px 12px 16px;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+ .topbar{flex-wrap:wrap}
+}
+
+/* ---- v2 photo / OCR ---- */
+.ocrzone{margin:10px 14px 0;background:var(--panel);border:1px dashed var(--line2);border-radius:14px;padding:12px 14px}
+.ocrzone .hint{font-size:12.5px;color:var(--dim);margin:0}
+#preview{max-width:100%;max-height:220px;border-radius:10px;margin:0 0 10px;display:none;border:1px solid var(--line)}
+#ocrprog{width:100%;margin:0 0 10px;display:none;accent-color:var(--purple)}
+#ocrbox{width:100%;margin:10px 0 0;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:10px;font-family:inherit;display:none;background:var(--panel2);color:var(--ink)}
+#ocrrotate{margin:9px 0 0 8px;padding:10px 16px;font-size:13.5px;font-weight:600;border-radius:999px;background:var(--panel3);border:1px solid var(--line2);color:var(--ink2);cursor:pointer;font-family:inherit}
+#ocrgo{display:none;margin-top:9px;padding:10px 18px;font-size:14px;font-weight:650;border:0;border-radius:999px;background:var(--grad);color:#fff;cursor:pointer;font-family:inherit}
+label.photobtn{flex:0 0 40px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:12px;background:var(--panel3);border:1px solid var(--line);cursor:pointer}
+label.photobtn:hover{border-color:var(--purple)}
+select#imgop{flex:0 0 auto;max-width:104px;padding:9px 6px;font-size:12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;background:var(--panel3);color:var(--ink2)}
+.chat.dragover{outline:2px dashed var(--purple);outline-offset:-6px}
+</style></head><body>
+<div class="app">
+<aside class="side">
+  <div class="sbrand">
+    <svg class="cubeic" width="38" height="38" viewBox="0 0 48 48" fill="none"><path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" stroke="url(#lg1)" stroke-width="2.6"/><path d="M6 14l18 10 18-10M24 24v20" stroke="url(#lg1)" stroke-width="2.6"/><defs><linearGradient id="lg1" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs></svg>
+    <div><b>Linear Algebra</b><span>RAG Bot</span></div>
+  </div>
+  <nav>
+    <a class="active" href="#home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Home</span></a>
+    <a href="#chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5Z"/></svg><span>Chat</span></a>
+    <a href="#topics"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg><span>Notes</span></a>
+    <a href="#topics"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 10a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>Resources</span></a>
+    <a href="#about"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg><span>About</span></a>
+  </nav>
+  <label class="addnotes" for="notefile"><span>📄</span><span>Add Notes</span></label>
+  <input type="file" id="notefile" accept=".txt,.md,.pdf,.docx" hidden>
+  <p class="notehint" id="notehint">Add your own notes (TXT / MD / PDF / DOCX) — the bot will answer from them too. Notes stay saved in this browser.</p>
+  <div class="learncard">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5 12 4l9.5 5.5L12 15 2.5 9.5Z"/><path d="M6.5 12.5V16c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3v-3.5"/><path d="M21.5 9.5V15"/></svg>
+    <b>Learn Smarter</b><span>with AI</span>
+  </div>
+  <div class="sfoot">v1.0.0</div>
+</aside>
+<div class="center">
+  <header class="topbar">
+    <div class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9a94b8" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.6-4.6"/></svg>
+      <input id="topicsearch" type="text" placeholder="Search topics... (e.g. eigenvalues, matrices)" aria-label="Search topics">
+      <kbd>Ctrl + K</kbd>
+    </div>
+    <button class="getstarted" id="getstarted">Get Started →</button>
+  </header>
+  <main id="home">
+    <section class="hero">
+      <div class="herotext">
+        <h1>Linear Algebra<br><em>RAG Bot</em> <span class="spark">✦</span></h1>
+        <p class="sub">Your intelligent tutor for Linear Algebra — powered by Retrieval-Augmented Generation.</p>
+        <p class="checks"><b>✓</b> Ask &nbsp;<b>✓</b> Learn &nbsp;<b>✓</b> Explore</p>
+        <div class="herobtns">
+          <button class="primary" id="startchat">💬 Start Chatting →</button>
+          <button class="ghost" id="exploretopics">📖 Explore Topics</button>
+        </div>
+      </div>
+      <div class="herocube">
+        <svg width="270" height="230" viewBox="0 0 270 230" fill="none">
+          <ellipse cx="140" cy="120" rx="118" ry="86" stroke="rgba(139,92,246,.35)" stroke-dasharray="3 6"/>
+          <g stroke="url(#lg2)" stroke-width="2.2" style="filter:drop-shadow(0 0 12px rgba(139,92,246,.55))">
+            <path d="M140 52 205 88v72l-65 36-65-36V88l65-36Z" fill="rgba(139,92,246,.07)"/>
+            <path d="M75 88l65 36 65-36M140 124v72" />
+            <path d="M140 124 140 30M140 124l64 34M140 124l-72 30" stroke-dasharray="4 4" stroke-width="1.6"/>
+          </g>
+          <path d="M140 30l-4 9h8l-4-9ZM204 158l-10 1 5 8 5-9ZM68 154l10-2-4-8-6 10Z" fill="#a78bfa"/>
+          <text x="148" y="30" fill="#c9c4e6" font-size="13" font-style="italic">z</text>
+          <text x="208" y="176" fill="#c9c4e6" font-size="13" font-style="italic">y</text>
+          <text x="52" y="172" fill="#c9c4e6" font-size="13" font-style="italic">x</text>
+          <text x="176" y="52" fill="#e9d5ff" font-size="19" font-style="italic" font-family="Georgia,serif">Ax = λx</text>
+          <defs><linearGradient id="lg2" x1="60" y1="40" x2="220" y2="200"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs>
+        </svg>
+      </div>
+    </section>
+    <section class="features">
+      <div class="fcard"><div class="fic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.9" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7"/><circle cx="8.7" cy="11.5" r="0.7" fill="#a78bfa"/><circle cx="12" cy="11.5" r="0.7" fill="#a78bfa"/><circle cx="15.3" cy="11.5" r="0.7" fill="#a78bfa"/><circle cx="8.7" cy="15" r="0.7" fill="#a78bfa"/><circle cx="12" cy="15" r="0.7" fill="#a78bfa"/><circle cx="15.3" cy="15" r="0.7" fill="#a78bfa"/></svg></div><b>Solve Problems</b><span>Get step-by-step explanations</span></div>
+      <div class="fcard"><div class="fic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 4.8 7 4.2 4 4.5v13c3-.3 6 .3 8 2 2-1.7 5-2.3 8-2v-13c-3-.3-6 .3-8 2Z"/><path d="M12 6.5v13"/></svg></div><b>Learn Concepts</b><span>Clear and concise concepts</span></div>
+      <div class="fcard"><div class="fic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></div><b>Trusted Sources</b><span>Based on standard Linear Algebra topics</span></div>
+      <div class="fcard"><div class="fic"><svg width="21" height="21" viewBox="0 0 24 24" fill="#a78bfa"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/></svg></div><b>Instant Answers</b><span>Powered by RAG technology</span></div>
+    </section>
+    <section class="topics" id="topics">
+      <div class="topicshead"><h3>📊 Popular Topics</h3><span id="topiccount"></span></div>
+      <div class="chips">
+        <button class="chip" data-q="What is a matrix?">Matrices</button>
+        <button class="chip" data-q="How to find determinant of a matrix?">Determinants</button>
+        <button class="chip" data-q="Explain eigenvalues and eigenvectors">Eigenvalues &amp; Eigenvectors</button>
+        <button class="chip" data-q="What is a vector space?">Vector Spaces</button>
+        <button class="chip" data-q="What is a linear transformation?">Linear Transformations</button>
+        <button class="chip" data-q="What is a symmetric matrix?">Symmetric Matrix</button>
+        <button class="chip" data-q="What is Cayley Hamilton theorem?">Cayley Hamilton</button>
+        <button class="chip" data-q="How to find inverse of a matrix?">Inverse</button>
+        <button class="chip" data-q="What is PCA?">PCA</button>
+        <button class="chip" data-q="What is Gram Schmidt process?">Gram Schmidt</button>
+        <button class="chip" data-q="What is SVD?">SVD</button>
+        <button class="chip" data-q="determinant of [[1,2],[3,4]]">determinant of [[1,2],[3,4]]</button>
+        <button class="chip" data-q="solve x + y = 5, x - y = 1">solve x + y = 5, x − y = 1</button>
+      </div>
+    </section>
+    <section class="tip" id="about">💡 <b>Tip:</b> You can ask questions like: <b>"What is an eigenvalue?"</b> &nbsp;<b>"Explain linear transformation"</b> &nbsp;<b>"determinant of [[2,1],[1,2]]"</b> — type in the chat, search above, or tap a topic.</section>
+    <footer>Made by Aazim Ameen</footer>
+  </main>
+</div>
+<aside class="chat" id="chat">
+  <div class="chathead">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+    <b>Chat with Linear Algebra Bot</b>
+    <button class="clearbtn" id="clearchat" title="Clear chat" aria-label="Clear chat">🗑</button>
+    <span class="online"><i></i>Online</span>
+  </div>
+  <p class="status" id="status">Loading…</p>
+  <div class="thread" id="thread">
+    <div class="msg bot"><span class="avatar">∑</span><div class="bubble"><p>Hello! 👋
+I'm your Linear Algebra RAG Bot.
+Ask me anything about matrices, vectors, eigenvalues, linear transformations, and more!</p></div></div>
+  </div>
+  <div class="ocrzone" id="ocrzone">
+    <img id="preview" alt="Selected photo preview">
+    <progress id="ocrprog" value="0" max="1"></progress>
+    <p class="hint" id="ocrstatus">📷 <b>Ask from a photo:</b> select a photo of a question with 📎, paste it in the chat (Ctrl+V), or drag and drop it here. The bot reads the text from the photo (OCR) and gives the same answer as typing.</p>
+    <textarea id="ocrbox" rows="3" placeholder="The text read from the photo will appear here — correct any mistakes and press the button."></textarea>
+    <button id="ocrgo">Answer this text</button>
+    <button id="ocrrotate">↻ Rotate photo (rotate and read again)</button>
+  </div>
+  <div class="composer" id="composer">
+    <label class="photobtn" for="imgfile" title="Ask from a photo — select a photo of a question">📎</label>
+    <input type="file" id="imgfile" accept="image/*" hidden>
+    <select id="imgop" aria-label="Matrix photo operation"><option value="auto">Matrix: Auto</option><option value="determinant">Determinant</option><option value="inverse">Inverse</option><option value="eigenvalues">Eigenvalues</option><option value="transpose">Transpose</option><option value="trace">Trace</option></select>
+    <input id="q" type="text" placeholder="Ask a question about Linear Algebra..." aria-label="Your question">
+    <button class="send" id="go" aria-label="Send">➤</button>
+  </div>
+</aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script>
+const DATA = {
+ "name": "LinearAlgebraRAG",
+ "chunks": [
+  {
+   "module": "Module 1",
+   "title": "What is a matrix",
+   "heading": "Matrix definition and order",
+   "text": "A matrix is a rectangular arrangement of numbers in rows and columns, written inside brackets. If a matrix has m rows and n columns, its order is m x n, and it has m x n elements in total. The element in row i and column j is written aij. Example: A = [[1, 2], [3, 4]] is a 2 x 2 matrix, a11 = 1, a12 = 2, a21 = 3, a22 = 4. Two matrices are equal only when they have the same order and every corresponding element is equal.",
+   "source": "Module 1 - What is a matrix"
+  },
+  {
+   "module": "Module 1",
+   "title": "Types of matrices",
+   "heading": "Row, column, square, diagonal, scalar, identity, zero and triangular matrices",
+   "text": "Types of matrices: A row matrix has only one row, a column matrix has only one column. A square matrix has equal rows and columns, like 3 x 3. A diagonal matrix is a square matrix where all elements outside the main diagonal are zero. A scalar matrix is a diagonal matrix where all diagonal elements are equal. An identity matrix I is a scalar matrix with all diagonal elements equal to 1, and A x I = A. A zero or null matrix has all elements zero. An upper triangular matrix has all elements below the diagonal zero, a lower triangular matrix has all elements above the diagonal zero.",
+   "source": "Module 1 - Types of matrices"
+  },
+  {
+   "module": "Module 1",
+   "title": "Matrix addition and subtraction",
+   "heading": "Addition and subtraction of matrices",
+   "text": "Matrix addition and subtraction are possible only when both matrices have the same order. You add or subtract corresponding elements, position by position. Example: A = [[1, 2], [3, 4]] and B = [[5, 6], [7, 8]], then A + B = [[6, 8], [10, 12]] and A - B = [[-4, -4], [-4, -4]]. Addition is commutative, A + B = B + A, and associative, (A + B) + C = A + (B + C). If orders are different, addition is not defined.",
+   "source": "Module 1 - Matrix addition and subtraction"
+  },
+  {
+   "module": "Module 1",
+   "title": "Scalar multiplication",
+   "heading": "Scalar multiplication of a matrix",
+   "text": "Scalar multiplication means multiplying every element of a matrix by the same number k. If A = [[1, 2], [3, 4]] then 3A = [[3, 6], [9, 12]]. Properties: k(A + B) = kA + kB, (k + l)A = kA + lA, and (kl)A = k(lA). In image processing this is brightness change: multiplying every pixel value, which is an element of the image matrix, by a number greater than 1 makes the image brighter.",
+   "source": "Module 1 - Scalar multiplication"
+  },
+  {
+   "module": "Module 1",
+   "title": "Matrix multiplication",
+   "heading": "How to multiply two matrices, condition and example",
+   "text": "Matrix multiplication AB is possible only when the number of columns of A equals the number of rows of B. If A is m x n and B is n x p, then AB is m x p. Each element of AB is the sum of products of a row of A with a column of B. Example: A = [[1, 2], [3, 4]], B = [[5, 6], [7, 8]], AB = [[1x5+2x7, 1x6+2x8], [3x5+4x7, 3x6+4x8]] = [[19, 22], [43, 50]]. Matrix multiplication is generally not commutative: AB is not equal to BA in general. It is associative, (AB)C = A(BC), and distributive over addition.",
+   "source": "Module 1 - Matrix multiplication"
+  },
+  {
+   "module": "Module 1",
+   "title": "Transpose of a matrix",
+   "heading": "Transpose definition and properties",
+   "text": "The transpose of a matrix A, written A transpose or A^T, is obtained by changing rows into columns and columns into rows. If A = [[1, 2], [3, 4], [5, 6]] which is 3 x 2, then A^T = [[1, 3, 5], [2, 4, 6]] which is 2 x 3. Properties of transpose: (A^T)^T = A, (A + B)^T = A^T + B^T, (kA)^T = k A^T, and (AB)^T = B^T A^T, note the order reverses in the last property.",
+   "source": "Module 1 - Transpose of a matrix"
+  },
+  {
+   "module": "Module 1",
+   "title": "Symmetric and skew-symmetric matrices",
+   "heading": "Symmetric and skew-symmetric matrices",
+   "text": "A square matrix A is symmetric if A^T = A, that is aij = aji for all i and j. Example: [[1, 2], [2, 5]] is symmetric. A square matrix is skew-symmetric if A^T = -A, that is aij = -aji, and all diagonal elements of a skew-symmetric matrix are zero. Example: [[0, 2], [-2, 0]] is skew-symmetric. Every square matrix can be written as the sum of a symmetric and a skew-symmetric matrix: A = (1/2)(A + A^T) + (1/2)(A - A^T).",
+   "source": "Module 1 - Symmetric and skew-symmetric matrices"
+  },
+  {
+   "module": "Module 1",
+   "title": "Hermitian and skew-Hermitian matrices",
+   "heading": "Hermitian and skew-Hermitian matrices",
+   "text": "For matrices with complex numbers, the conjugate transpose of A is written A theta or A*. A square matrix is Hermitian if A* = A, its diagonal elements are always real numbers. A square matrix is skew-Hermitian if A* = -A, its diagonal elements are zero or purely imaginary. These are the complex versions of symmetric and skew-symmetric matrices, which are the real case.",
+   "source": "Module 1 - Hermitian and skew-Hermitian matrices"
+  },
+  {
+   "module": "Module 1",
+   "title": "Applications of matrices",
+   "heading": "Applications of matrices in real life",
+   "text": "Applications of matrices: Images are matrices of pixel values, so image brightness, filters and compression use matrix operations. Computer graphics and games use matrices for rotation, scaling and translation of objects. In data science and AI, datasets are matrices and PCA, regression and neural networks are matrix multiplication. GIS and satellite images store land data as matrices. Google PageRank uses eigenvalues of a matrix. Cryptography uses matrices in the Hill cipher. Matrices are also used in economics, electrical circuits, robotics and weather models.",
+   "source": "Module 1 - Applications of matrices"
+  },
+  {
+   "module": "Module 2",
+   "title": "Determinant of a matrix",
+   "heading": "Determinant 2x2 and 3x3, how to find determinant",
+   "text": "The determinant is a single number calculated from a square matrix only, written det(A) or |A|. For a 2 x 2 matrix A = [[a, b], [c, d]], det(A) = ad - bc. Example: [[1, 2], [3, 4]] has determinant 1x4 - 2x3 = -2. For a 3 x 3 matrix, expand along any row or column using cofactors, or use the  rule by repeating the first two columns. Determinant tells whether a matrix has an inverse: if det(A) is not zero the matrix is non-singular and invertible, if det(A) = 0 it is singular and has no inverse. Geometrically the absolute value of the determinant is the area or volume scaling factor of the transformation.",
+   "source": "Module 2 - Determinant of a matrix"
+  },
+  {
+   "module": "Module 2",
+   "title": "Properties of determinants",
+   "heading": "Properties of determinants",
+   "text": "Properties of determinants: Interchanging two rows or columns changes the sign of the determinant. If all elements of a row or column are multiplied by k, the determinant is multiplied by k, so det(kA) = k^n det(A) for an n x n matrix. If two rows are identical or proportional, the determinant is zero. If a row is all zeros, the determinant is zero. Adding a multiple of one row to another row does not change the determinant. The determinant of a triangular matrix is the product of its diagonal elements. det(AB) = det(A) x det(B), and det(A^T) = det(A).",
+   "source": "Module 2 - Properties of determinants"
+  },
+  {
+   "module": "Module 2",
+   "title": "Minor and cofactor",
+   "heading": "Minors, cofactors and adjoint of a matrix",
+   "text": "The minor of element aij is the determinant of the smaller matrix left after deleting row i and column j, written Mij. The cofactor is Cij = (-1)^(i+j) x Mij, so the sign alternates like a chessboard starting with plus at position 1,1. The adjoint of A, adj(A), is the transpose of the cofactor matrix. Minors and cofactors are used to find the determinant by expansion and to find the inverse of a matrix.",
+   "source": "Module 2 - Minor and cofactor"
+  },
+  {
+   "module": "Module 2",
+   "title": "Inverse of a matrix",
+   "heading": "Inverse of a matrix using adjoint, formula and condition",
+   "text": "The inverse of a square matrix A, written A inverse or A^-1, satisfies A x A^-1 = A^-1 x A = I, the identity matrix. Formula: A^-1 = adj(A) / det(A). The inverse exists only when det(A) is not zero. Example: A = [[1, 2], [3, 4]], det = -2, adj(A) = [[4, -2], [-3, 1]], so A^-1 = [[-2, 1], [1.5, -0.5]]. Inverse is used to solve a system of equations: if AX = B then X = A^-1 B. Also (AB)^-1 = B^-1 A^-1 and (A^-1)^-1 = A.",
+   "source": "Module 2 - Inverse of a matrix"
+  },
+  {
+   "module": "Module 2",
+   "title": "Characteristic equation",
+   "heading": "Characteristic equation and characteristic polynomial",
+   "text": "The characteristic equation of a square matrix A is det(A - lambda I) = 0, where lambda is an unknown and I is the identity matrix of the same order. Expanding this determinant gives the characteristic polynomial in lambda. For a 2 x 2 matrix it is lambda^2 - (trace of A) lambda + det(A) = 0, where trace is the sum of diagonal elements. The roots of the characteristic equation are the eigenvalues of A. Example: A = [[2, 1], [1, 2]], A - lambda I = [[2-lambda, 1], [1, 2-lambda]], determinant = (2-lambda)^2 - 1 = lambda^2 - 4 lambda + 3 = 0, so eigenvalues are 1 and 3.",
+   "source": "Module 2 - Characteristic equation"
+  },
+  {
+   "module": "Module 2",
+   "title": "Cayley Hamilton theorem",
+   "heading": "Cayley Hamilton theorem statement and use for inverse",
+   "text": "Cayley Hamilton theorem states that every square matrix satisfies its own characteristic equation. If the characteristic equation of A is A^2 - 4A + 3I = 0, then the matrix itself obeys it, exactly like lambda does. Use for inverse: from A^2 - 4A + 3I = 0, rearrange 3I = 4A - A^2, multiply by A^-1, giving 3 A^-1 = 4I - A, so A^-1 = (4I - A) / 3. This is the Cayley Hamilton method of finding the inverse without cofactors, and it also reduces higher powers of A to lower powers.",
+   "source": "Module 2 - Cayley Hamilton theorem"
+  },
+  {
+   "module": "Module 3",
+   "title": "Eigenvalues and eigenvectors",
+   "heading": "Eigenvalues and eigenvectors definition and meaning",
+   "text": "An eigenvector of a square matrix A is a non-zero vector x such that A x = lambda x, where lambda is a number called the eigenvalue. Meaning: normally a matrix rotates and stretches a vector, but an eigenvector is a special vector whose direction does not change, it is only stretched or shrunk by the factor lambda. The eigenvector must never be the zero vector, but the eigenvalue can be zero. Eigenvalues and eigenvectors show the natural directions of a transformation.",
+   "source": "Module 3 - Eigenvalues and eigenvectors"
+  },
+  {
+   "module": "Module 3",
+   "title": "How to find eigenvalues and eigenvectors",
+   "heading": "Steps to find eigenvalues and eigenvectors with example",
+   "text": "Steps to find eigenvalues: first write the characteristic equation det(A - lambda I) = 0, expand the determinant, and solve for lambda, those values are the eigenvalues. Then for each eigenvalue, solve (A - lambda I) x = 0 to get the eigenvector. Example: A = [[2, 1], [1, 2]]. Characteristic equation lambda^2 - 4 lambda + 3 = 0 gives lambda = 1 and 3. For lambda = 3: (A - 3I)x = [[-1, 1], [1, -1]] x = 0 gives x1 = x2, so eigenvector is [1, 1]. For lambda = 1: eigenvector is [1, -1]. Check: A x [1,1] = [3,3] = 3 x [1,1], correct.",
+   "source": "Module 3 - How to find eigenvalues and eigenvectors"
+  },
+  {
+   "module": "Module 3",
+   "title": "Properties of eigenvalues",
+   "heading": "Properties of eigenvalues, trace and determinant relation",
+   "text": "Properties of eigenvalues: The sum of eigenvalues of A equals the trace of A, the sum of diagonal elements. The product of eigenvalues equals the determinant of A. A matrix is singular if and only if one of its eigenvalues is zero. Eigenvalues of A transpose are the same as A. Eigenvalues of a triangular or diagonal matrix are exactly its diagonal elements. If lambda is an eigenvalue of A, then lambda^2 is an eigenvalue of A^2, 1/lambda is an eigenvalue of A inverse, and lambda + k is an eigenvalue of A + kI.",
+   "source": "Module 3 - Properties of eigenvalues"
+  },
+  {
+   "module": "Module 3",
+   "title": "Diagonalization",
+   "heading": "Diagonalization of a matrix",
+   "text": "A square matrix A is diagonalizable if it can be written as A = P D P^-1, where D is a diagonal matrix of eigenvalues and P is the matrix whose columns are the corresponding eigenvectors. Condition: an n x n matrix is diagonalizable if it has n linearly independent eigenvectors, which is guaranteed when all eigenvalues are distinct. A symmetric matrix is always diagonalizable. Diagonalization makes powers easy: A^k = P D^k P^-1, and D^k is just each diagonal element raised to power k.",
+   "source": "Module 3 - Diagonalization"
+  },
+  {
+   "module": "Module 3",
+   "title": "PCA principal component analysis",
+   "heading": "PCA in data science using eigenvalues and eigenvectors",
+   "text": "PCA, Principal Component Analysis, is a data science method that reduces a large dataset to fewer variables while keeping most information. Steps: arrange data as a matrix, subtract the mean from each column, calculate the covariance matrix, find its eigenvalues and eigenvectors. The eigenvector with the largest eigenvalue is the first principal component, the direction where data varies the most. Keeping only the top components compresses the data, removes noise, and is used in image compression and face recognition, the eigenfaces method. PCA works because of eigenvalues and eigenvectors of the covariance matrix, which is a symmetric matrix.",
+   "source": "Module 3 - PCA principal component analysis"
+  },
+  {
+   "module": "Module 1-3",
+   "title": "System of linear equations",
+   "heading": "Solving system of linear equations AX = B, types of solutions",
+   "text": "A system of linear equations can be written as AX = B, where A is the coefficient matrix, X is the variable column matrix and B is the constants column. If det(A) is not zero, there is a unique solution X = A^-1 B, also found by Cramer rule. If det(A) = 0, the system has either no solution, called inconsistent, or infinitely many solutions. Geometrically for two equations, the lines either meet at one point (unique), are parallel (no solution), or are the same line (infinite solutions). Rank decides this: unique solution when rank of A equals number of variables.",
+   "source": "Module 1-3 - System of linear equations"
+  },
+  {
+   "module": "Module 1-3",
+   "title": "Rank of a matrix",
+   "heading": "Rank of a matrix definition and how to find it",
+   "text": "The rank of a matrix is the maximum number of linearly independent rows or columns of the matrix, rows and columns give the same rank. How to find rank: convert the matrix to row echelon form using row operations and count the non-zero rows. Rank is also the order of the largest square sub-matrix whose determinant is not zero. For an m x n matrix, rank is at most the smaller of m and n. A square n x n matrix has an inverse exactly when its rank is n, full rank.",
+   "source": "Module 1-3 - Rank of a matrix"
+  },
+  {
+   "module": "Module 1-3",
+   "title": "Linear algebra in NumPy",
+   "heading": "NumPy code for matrix operations determinant inverse eigenvalues",
+   "text": "In NumPy, a matrix is created with np.array([[1, 2], [3, 4]]). Addition is A + B, matrix multiplication is A @ B or np.dot(A, B), transpose is A.T, determinant is np.linalg.det(A), inverse is np.linalg.inv(A), eigenvalues and eigenvectors are np.linalg.eig(A), and solving AX = B is np.linalg.solve(A, B). These practicals are part of the course: matrix operations, determinant, inverse and eigenvalue exercises in Python using NumPy, SciPy and Matplotlib.",
+   "source": "Module 1-3 - Linear algebra in NumPy"
+  },
+  {
+   "module": "Module 2",
+   "title": "Determinant using numpy det",
+   "heading": "How to calculate determinant using numpy linalg det method",
+   "text": "To calculate the determinant in Python, use numpy.linalg.det. Code: import numpy as np, A = np.array([[1, 2], [3, 4]]), res = np.linalg.det(A), print(res). Output is -2.0000000000000004, which is -2 with a small floating point error, because det = 1x4 - 2x3 = -2. This method is straightforward and suitable for small to medium sized matrices. It directly computes the determinant of matrix A using linear algebra techniques inside NumPy.",
+   "source": "Module 2 - Determinant using numpy det"
+  },
+  {
+   "module": "Module 2",
+   "title": "Determinant using slogdet",
+   "heading": "How to calculate determinant using numpy slogdet sign logdet method",
+   "text": "numpy.linalg.slogdet is a numerically stable method to calculate the determinant, best for large matrices. Code: import numpy as np, A = np.array([[50, 29], [30, 44]]), sign, logdet = np.linalg.slogdet(A), res = sign * np.exp(logdet), print(res). Output is 1330.0, because det = 50x44 - 29x30 = 2200 - 870 = 1330. slogdet returns two things: sign, the sign of the determinant, and logdet, the logarithm of its absolute value. The determinant is then sign multiplied by exp(logdet). Splitting sign and log avoids numerical overflow or underflow when the determinant is very large or very small, which is why this method is called numerically stable.",
+   "source": "Module 2 - Determinant using slogdet"
+  },
+  {
+   "module": "Module 2",
+   "title": "Determinant using LU decomposition",
+   "heading": "How to calculate determinant using LU decomposition scipy linalg lu",
+   "text": "LU decomposition can also be used to calculate the determinant. scipy.linalg.lu decomposes matrix A into P, a permutation matrix, L, a lower triangular matrix, and U, an upper triangular matrix, so A = P L U. Code: import numpy as np, import scipy.linalg, A = np.array([[1, 2], [3, 4]]), P, L, U = scipy.linalg.lu(A), res = np.linalg.det(P) * np.prod(np.diag(U)), print(res). Output is -2.0. Important correction: the determinant is NOT only the product of the diagonal elements of U. prod of diag(U) alone gives +2 for this matrix, because scipy swaps rows during decomposition and det(P) = -1 here. The correct formula is det(A) = det(P) x product of diagonal elements of U, which gives -1 x 2 = -2. The idea behind the method is true: the determinant of a triangular matrix is the product of its diagonal elements, and det(L) = 1, so only P and U contribute.",
+   "source": "Module 2 - Determinant using LU decomposition"
+  },
+  {
+   "module": "Module 1-3",
+   "title": "What is RAG",
+   "heading": "What is RAG retrieval augmented generation how this bot works",
+   "text": "RAG means Retrieval Augmented Generation. First the question is converted into words, then the system retrieves the most relevant chunks from a knowledge base using BM25 and TF-IDF ranking, and then the answer is given only from those retrieved chunks, with the topic shown. If no chunk matches well, the bot refuses instead of guessing. This project uses a knowledge base of Linear Algebra topics, split into chunks, one chunk per topic, so any question about a topic retrieves its own chunk.",
+   "source": "Module 1-3 - What is RAG"
+  },
+  {
+   "module": "Vectors",
+   "title": "Vectors and their operations",
+   "heading": "Vector magnitude norm unit vector addition scalar multiplication",
+   "text": "A vector is a quantity with magnitude and direction, written as an ordered list like v = (1, 2, 3). The magnitude or norm of v is ||v|| = square root of (v1^2 + v2^2 + ... + vn^2). Example: ||(3, 4)|| = 5. A unit vector has magnitude 1, found by dividing the vector by its own magnitude: u = v / ||v||. Vectors of the same size add component by component, and scalar multiplication multiplies every component. The zero vector has all components zero. Vectors are used for positions, velocities, forces, and as columns of data in data science.",
+   "source": "Vectors - Vectors and their operations"
+  },
+  {
+   "module": "Vectors",
+   "title": "Dot product",
+   "heading": "Dot product of two vectors angle orthogonal projection",
+   "text": "The dot product of u = (u1, u2, u3) and v = (v1, v2, v3) is u.v = u1v1 + u2v2 + u3v3, a single number. Example: (1, 2, 3).(4, 5, 6) = 4 + 10 + 18 = 32. Angle formula: u.v = ||u|| ||v|| cos(theta), so cos(theta) = (u.v) / (||u|| ||v||). Two vectors are orthogonal (perpendicular) exactly when their dot product is zero. The projection of u onto v is proj = ((u.v) / (v.v)) v, the part of u that lies along v. Dot product is also called inner product or scalar product.",
+   "source": "Vectors - Dot product"
+  },
+  {
+   "module": "Vectors",
+   "title": "Cross product",
+   "heading": "Cross product of two vectors area perpendicular vector",
+   "text": "The cross product of two 3D vectors u x v is a new vector perpendicular to both u and v. Formula using a determinant: u x v = determinant of the matrix with rows i j k, u1 u2 u3, v1 v2 v3, which expands to (u2v3 - u3v2, u3v1 - u1v3, u1v2 - u2v1). Example: (1, 0, 0) x (0, 1, 0) = (0, 0, 1). The magnitude ||u x v|| = ||u|| ||v|| sin(theta) equals the area of the parallelogram formed by u and v. Cross product is not commutative: u x v = -(v x u). It is used for torque, angular momentum and surface normals in graphics.",
+   "source": "Vectors - Cross product"
+  },
+  {
+   "module": "Vector Spaces",
+   "title": "Vector space",
+   "heading": "What is a vector space definition axioms examples",
+   "text": "A vector space is a set of objects called vectors, with addition and scalar multiplication, satisfying 10 axioms: closed under addition and scalar multiplication, addition is commutative and associative, there is a zero vector, every vector has an additive inverse, and scalar multiplication distributes and respects 1 and products of scalars. Examples of vector spaces: R^n (all n-tuples of real numbers), the set of all m x n matrices, the set of polynomials of degree at most n, and the set of continuous functions. A single point {0} is the smallest vector space. If any axiom fails, the set is not a vector space.",
+   "source": "Vector Spaces - Vector space"
+  },
+  {
+   "module": "Vector Spaces",
+   "title": "Subspace",
+   "heading": "Subspace definition test examples",
+   "text": "A subspace is a subset of a vector space that is itself a vector space. Subspace test: a non-empty subset W is a subspace if (1) the zero vector is in W, (2) W is closed under addition: u + v is in W whenever u and v are, (3) W is closed under scalar multiplication: k u is in W. Examples: any line or plane through the origin in R^3 is a subspace, but a line not through the origin is NOT a subspace because it misses the zero vector and is not closed. The null space and column space of a matrix are important subspaces.",
+   "source": "Vector Spaces - Subspace"
+  },
+  {
+   "module": "Vector Spaces",
+   "title": "Linear combination and span",
+   "heading": "Linear combination span of vectors spanning set",
+   "text": "A linear combination of vectors v1...vk is any sum c1v1 + c2v2 + ... + ckvk with numbers c1...ck called coefficients. The span of a set of vectors is the set of ALL their linear combinations, and it is always a subspace. Example: span of (1, 0) and (0, 1) is the whole plane R^2, because any (x, y) = x(1,0) + y(0,1). A set spans a space if its span equals the whole space. Adding a vector that is already in the span does not grow the span.",
+   "source": "Vector Spaces - Linear combination and span"
+  },
+  {
+   "module": "Vector Spaces",
+   "title": "Linear independence",
+   "heading": "Linearly independent and dependent vectors definition test",
+   "text": "Vectors v1...vk are linearly independent if c1v1 + ... + ckvk = 0 forces every coefficient ci = 0, the only solution is trivial. If some non-zero combination gives zero, the vectors are linearly dependent, and at least one vector is a combination of the others. Tests: put the vectors as columns of a matrix; independent exactly when the matrix has a pivot in every column, equivalently rank = number of vectors, and for a square matrix when the determinant is not zero. Any set with more vectors than the dimension of the space is always dependent, and any set containing the zero vector is dependent.",
+   "source": "Vector Spaces - Linear independence"
+  },
+  {
+   "module": "Vector Spaces",
+   "title": "Basis and dimension",
+   "heading": "Basis of a vector space dimension definition",
+   "text": "A basis of a vector space is a set of vectors that is linearly independent AND spans the whole space. Every vector of the space then has exactly one representation as a combination of basis vectors, and those coefficients are its coordinates. The dimension of the space is the number of vectors in any basis, all bases have the same size. Examples: {(1,0), (0,1)} is the standard basis of R^2, dimension 2. {1, x, x^2} is a basis of polynomials of degree at most 2, dimension 3. A basis is a minimal spanning set and a maximal independent set at the same time.",
+   "source": "Vector Spaces - Basis and dimension"
+  },
+  {
+   "module": "Transformations",
+   "title": "Linear transformation",
+   "heading": "Linear transformation definition examples standard matrix",
+   "text": "A linear transformation T from R^n to R^m is a function that preserves addition and scalar multiplication: T(u + v) = T(u) + T(v) and T(k u) = k T(u). Every linear transformation is multiplication by a matrix, its standard matrix, whose columns are T(e1), T(e2)... where ei are standard basis vectors. Examples: rotation, reflection, projection and scaling in the plane are linear transformations with 2x2 matrices. Rotation by angle theta has matrix [[cos theta, -sin theta], [sin theta, cos theta]]. A transformation with T(0) not equal to 0, like translation by a fixed non-zero vector, is NOT linear.",
+   "source": "Transformations - Linear transformation"
+  },
+  {
+   "module": "Transformations",
+   "title": "Kernel and range",
+   "heading": "Kernel null space range of a linear transformation injective surjective",
+   "text": "The kernel of a linear transformation T, also called null space, is the set of all vectors x with T(x) = 0, or Ax = 0 for its matrix. It is a subspace of the domain. The range, also called column space for a matrix, is the set of all outputs T(x), a subspace of the codomain. T is injective (one-to-one) exactly when its kernel is only {0}. T is surjective (onto) exactly when its range is the whole codomain. For a square matrix, injective, surjective and invertible are all equivalent, and all mean det(A) is not zero.",
+   "source": "Transformations - Kernel and range"
+  },
+  {
+   "module": "Transformations",
+   "title": "Rank nullity theorem",
+   "heading": "Rank nullity theorem statement",
+   "text": "Rank nullity theorem: for a linear transformation T from a finite dimensional space V, or an m x n matrix A, rank + nullity = dimension of the domain = n, the number of columns. Rank is the dimension of the column space (number of pivot columns), nullity is the dimension of the null space (number of free variables). Example: a 3 x 4 matrix with rank 2 has nullity 4 - 2 = 2, so Ax = 0 has 2 free variables and infinitely many solutions forming a 2-dimensional space.",
+   "source": "Transformations - Rank nullity theorem"
+  },
+  {
+   "module": "Systems",
+   "title": "Gauss elimination and row echelon form",
+   "heading": "Gauss elimination Gaussian Jordan row echelon form RREF steps",
+   "text": "Gauss elimination solves a system of equations by converting the augmented matrix to row echelon form using three elementary row operations: swap two rows, multiply a row by a non-zero number, add a multiple of one row to another. Row echelon form has staircase zeros below the leading entries (pivots). Gauss Jordan elimination continues to reduced row echelon form, RREF, where every pivot is 1 and the only non-zero entry in its column. In RREF the solution can be read directly. Variables at pivots are basic variables, the others are free variables. Row operations never change the solution set of the system.",
+   "source": "Systems - Gauss elimination and row echelon form"
+  },
+  {
+   "module": "Systems",
+   "title": "Homogeneous system and null space",
+   "heading": "Homogeneous system Ax = 0 free variables trivial solution",
+   "text": "A homogeneous system Ax = 0 always has the trivial solution x = 0. It has non-trivial solutions exactly when there is at least one free variable, that is when rank of A is less than the number of variables, and for a square matrix when det(A) = 0. The set of all solutions is the null space of A, a subspace whose dimension is the nullity. A non-homogeneous system Ax = b either has no solution, exactly one, or infinitely many, and when it has infinitely many they are one particular solution plus the whole null space.",
+   "source": "Systems - Homogeneous system and null space"
+  },
+  {
+   "module": "Systems",
+   "title": "Cramer rule",
+   "heading": "Cramer rule solving system using determinants",
+   "text": "Cramer rule solves a square system Ax = b with det(A) not zero using determinants: xi = det(Ai) / det(A), where Ai is A with its i-th column replaced by b. Example: for x + 2y = 5 and 3x + 4y = 6, det(A) = -2, det(Ax) = 5x4 - 2x6 = 8, so x = -4; det(Ay) = 1x6 - 5x3 = -9, so y = 4.5. Cramer rule is clean for 2x2 and 3x3 systems and theory, but too slow for large systems, where Gauss elimination is used.",
+   "source": "Systems - Cramer rule"
+  },
+  {
+   "module": "Orthogonality",
+   "title": "Orthogonal vectors and orthogonal matrix",
+   "heading": "Orthogonal orthonormal vectors orthogonal matrix definition properties",
+   "text": "Vectors are orthogonal when their dot product is zero. A set is orthonormal when every pair is orthogonal and every vector has length 1. An orthogonal matrix Q is a square matrix whose columns (and rows) form an orthonormal set, which gives the beautiful property Q^T Q = I, so Q inverse = Q transpose. Orthogonal matrices preserve lengths and angles: ||Qx|| = ||x||, so they represent rotations and reflections. Determinant of an orthogonal matrix is +1 (rotation) or -1 (reflection).",
+   "source": "Orthogonality - Orthogonal vectors and orthogonal matrix"
+  },
+  {
+   "module": "Orthogonality",
+   "title": "Gram Schmidt process",
+   "heading": "Gram Schmidt orthogonalization process steps",
+   "text": "The Gram Schmidt process converts a basis into an orthogonal or orthonormal basis of the same space. Steps: take u1 = v1. Then u2 = v2 - projection of v2 onto u1, that is v2 - ((v2.u1)/(u1.u1)) u1. Then u3 = v3 - proj onto u1 - proj onto u2, and so on: each new vector has its components along all previous u vectors subtracted, leaving only the part perpendicular to them. Finally divide each ui by its length to get orthonormal vectors. Gram Schmidt is the theory behind QR decomposition.",
+   "source": "Orthogonality - Gram Schmidt process"
+  },
+  {
+   "module": "Orthogonality",
+   "title": "Projection and least squares",
+   "heading": "Least squares solution normal equations projection onto column space",
+   "text": "When Ax = b has no exact solution (more equations than unknowns), the least squares solution x-hat makes the error ||b - Ax|| as small as possible; it is used to fit lines and curves to data. Method: solve the normal equations A^T A x = A^T b. Geometrically, Ax-hat is the projection of b onto the column space of A, the closest point of that space to b, and the error vector b - Ax-hat is perpendicular to the column space, which is exactly what the normal equations say. Line fitting y = mx + c to data points is the most common least squares example.",
+   "source": "Orthogonality - Projection and least squares"
+  },
+  {
+   "module": "Decompositions",
+   "title": "QR decomposition",
+   "heading": "QR decomposition A = QR meaning and uses",
+   "text": "QR decomposition writes a matrix A as A = Q R, where Q has orthonormal columns and R is upper triangular. It is built by applying the Gram Schmidt process to the columns of A. Uses: solving least squares problems in a stable way, and the QR algorithm, the standard method computers use to find eigenvalues of a matrix by repeated QR factorization.",
+   "source": "Decompositions - QR decomposition"
+  },
+  {
+   "module": "Decompositions",
+   "title": "SVD singular value decomposition",
+   "heading": "Singular value decomposition SVD A = U sigma V transpose uses",
+   "text": "Singular Value Decomposition, SVD, factorizes any m x n matrix as A = U Sigma V^T, where U and V are orthogonal matrices and Sigma is diagonal with non-negative entries called singular values, in decreasing order. Singular values are the square roots of the eigenvalues of A^T A. Unlike eigenvalues, SVD works for every matrix, even rectangular and singular ones. Uses: image compression (keep only the largest singular values for a low rank approximation), data compression, noise removal, recommendation systems and PCA, principal components come directly from SVD.",
+   "source": "Decompositions - SVD singular value decomposition"
+  },
+  {
+   "module": "Eigen Advanced",
+   "title": "Similar matrices",
+   "heading": "Similar matrices similarity same eigenvalues",
+   "text": "Two square matrices A and B are similar if B = P^-1 A P for some invertible matrix P. Similar matrices represent the same linear transformation in different bases, so they share the same eigenvalues, determinant, trace and characteristic polynomial. Diagonalization is the special case where the similar matrix is diagonal. Similarity is an equivalence relation on square matrices.",
+   "source": "Eigen Advanced - Similar matrices"
+  },
+  {
+   "module": "Eigen Advanced",
+   "title": "Quadratic forms and positive definite",
+   "heading": "Quadratic form positive definite matrix test eigenvalues",
+   "text": "A quadratic form is an expression x^T A x with A symmetric, like 2x^2 + 3xy + 5y^2. A symmetric matrix A is positive definite if x^T A x > 0 for every non-zero x. Tests for positive definite: all eigenvalues are positive, or all leading principal minors (top-left determinants) are positive, or A = R^T R for some invertible R. Positive definite matrices appear in optimization: the Hessian being positive definite at a point means a local minimum.",
+   "source": "Eigen Advanced - Quadratic forms and positive definite"
+  },
+  {
+   "module": "Spaces",
+   "title": "Column space and row space",
+   "heading": "Column space row space fundamental subspaces",
+   "text": "The column space of A is the span of its columns, the set of all Ax, living in R^m; its dimension is the rank. The row space is the span of its rows, living in R^n, and it has the same dimension, the rank, which is why row rank always equals column rank. Together with the null space of A and the null space of A transpose, these are called the four fundamental subspaces of a matrix. The system Ax = b has a solution exactly when b is in the column space of A.",
+   "source": "Spaces - Column space and row space"
+  },
+  {
+   "module": "Spaces",
+   "title": "Inner product space",
+   "heading": "Inner product space definition norm angle Cauchy Schwarz",
+   "text": "An inner product space is a vector space with an inner product, a rule <u, v> that gives a number, is symmetric, linear in each side, and <v, v> >= 0 with equality only for v = 0. The dot product on R^n is the standard example; integrals give inner products for functions. From an inner product come a norm ||v|| = sqrt(<v, v>) and an angle between vectors. Cauchy Schwarz inequality: |<u, v>| <= ||u|| ||v||, with equality exactly when u and v are parallel. Inner product spaces generalize geometry beyond R^n.",
+   "source": "Spaces - Inner product space"
+  },
+  {
+   "module": "Spaces",
+   "title": "Change of basis",
+   "heading": "Change of basis coordinates transition matrix",
+   "text": "Change of basis means writing the same vector in a different basis. If B and C are two bases, coordinates convert by [x]B = P [x]C, where the transition matrix P has the C basis vectors written in B coordinates as its columns, and the inverse matrix converts back. The vector itself never changes, only its description changes, like measuring the same length in inches instead of centimeters. Choosing a good basis can make a transformation diagonal and its powers trivial.",
+   "source": "Spaces - Change of basis"
+  },
+  {
+   "module": "Applications",
+   "title": "Markov chains and steady state",
+   "heading": "Markov chain steady state eigenvector eigenvalue 1 transition matrix",
+   "text": "A Markov chain models a system that jumps between states with fixed probabilities, stored in a transition matrix whose columns (or rows) sum to 1. After many steps the state distribution settles to a steady state vector x with A x = x, that is an eigenvector of the transition matrix with eigenvalue 1. Google PageRank is the famous example: web pages are states, links give probabilities, and the steady state ranks the pages. This is a direct real world use of eigenvectors.",
+   "source": "Applications - Markov chains and steady state"
+  },
+  {
+   "module": "Decompositions",
+   "title": "Matrix decomposition",
+   "heading": "Matrix decomposition factorization LU QR SVD diagonalization overview",
+   "text": "Matrix decomposition, also called matrix factorization, means breaking a matrix into a product of simpler matrices that are easier to work with. Main types: LU decomposition A = LU (used to solve systems and find determinants), QR decomposition A = QR with Q orthonormal (used in least squares and eigenvalue algorithms), diagonalization A = PDP inverse (used for matrix powers), and SVD, A = U Sigma V transpose, which works for every matrix (used in compression and PCA). Each decomposition reveals hidden structure of the matrix and turns a hard problem into easy steps.",
+   "source": "Decompositions - Matrix decomposition"
+  },
+  {
+   "module": "Systems",
+   "title": "Elementary row operations and determinant",
+   "heading": "Elementary row operations effect on determinant elementary matrices",
+   "text": "The three elementary row operations affect the determinant in fixed ways: swapping two rows multiplies the determinant by -1, multiplying a row by k multiplies the determinant by k, and adding a multiple of one row to another leaves the determinant unchanged. Each row operation is multiplication by an elementary matrix, which always has an inverse of the same type. These rules give a fast way to find determinants: reduce to triangular form with row operations, track the changes, then multiply the diagonal.",
+   "source": "Systems - Elementary row operations and determinant"
+  }
+ ]
+};
+const STOP=new Set(`a an the is are was were be been being of to in on for with and or as at by from that this it its i you he she we they what how why when where which who do does did can could should would will shall may might about into than then so such no not only also just very explain define find give tell me kya hai hain mein kaise karo hota hoti ka ki ke ko se aur batao samjhao nikalo nikalne wala wali ek ye iska iski uska simply briefly detail details example examples please meaning means definition easy easily short concept concepts topic topics types important introduction overview basics basic difference differences between uses using solve solution solutions find calculate calculation compute state prove proof theorem theorems method methods step steps formula question questions answer answers`.split(/\s+/));
+function stemw(s){if(/^\d+$/.test(s))return s;if(s.length>4&&s.endsWith('ies'))return s.slice(0,-3)+'y';if(s.length>3&&s.endsWith('s')&&!s.endsWith('ss'))return s.slice(0,-1);return s;}
+function tokenize(t){const x=t.toLowerCase().replace(/-/g,' ').match(/[a-z0-9][a-z0-9']+|[a-z0-9]/g)||[];return x.filter(s=>(!STOP.has(s)&&s.length>1)||/^\d+$/.test(s)).map(stemw);}
+class RagIndex{
+ constructor(chunks){this.chunks=chunks;this.n=chunks.length;this.docTokens=chunks.map(c=>tokenize(c.text+" "+c.heading+" "+c.title+" "+c.title));this.titleTokens=chunks.map(c=>new Set(tokenize(c.title+" "+c.heading)));this.docTF=this.docTokens.map(ts=>{const m=new Map();for(const t of ts)m.set(t,(m.get(t)||0)+1);return m;});this.docLen=this.docTokens.map(ts=>Math.max(1,ts.length));this.avgdl=this.docLen.reduce((a,b)=>a+b,0)/Math.max(1,this.n);this.df=new Map();for(const tf of this.docTF)for(const t of tf.keys())this.df.set(t,(this.df.get(t)||0)+1);this.idf=new Map();for(const [t,d] of this.df)this.idf.set(t,Math.log(1+(this.n-d+0.5)/(d+0.5)));}
+ bm25(q,i,k1=1.5,b=0.75){const tf=this.docTF[i],dl=this.docLen[i];let s=0;for(const t of q)if(tf.has(t)){const idf=this.idf.get(t)||0;s+=idf*(tf.get(t)*(k1+1))/(tf.get(t)+k1*(1-b+b*dl/this.avgdl));}return s;}
+ cos(qtf,i){const tf=this.docTF[i];let dot=0,qn=0,dn=0;for(const [t,qc] of qtf){const idf=this.idf.get(t)||0,qv=qc*idf;qn+=qv*qv;if(tf.has(t))dot+=qv*(tf.get(t)*idf);}for(const [t,c] of tf){const v=c*(this.idf.get(t)||0);dn+=v*v;}return(!qn||!dn)?0:dot/(Math.sqrt(qn)*Math.sqrt(dn));}
+ retrieve(query,k=3){let qterms=tokenize(query);if(!qterms.length)return[];
+  const SYN={det:["determinant"],pca:["principal","component"],svd:["singular","value","decomposition"],rref:["reduced","row","echelon"],kernel:["null","space"],magnitude:["norm"],norm:["magnitude"],orthogonal:["perpendicular"],inverse:["invertible"],eigenvalue:["eigenvector"],eigenvector:["eigenvalue"]};
+  const extra=[];for(const t of qterms)if(SYN[t])extra.push(...SYN[t]);qterms=[...new Set([...qterms,...extra])];const qtf=new Map();for(const t of qterms)qtf.set(t,(qtf.get(t)||0)+1);const scored=[];for(let i=0;i<this.n;i++){const bm=this.bm25(qterms,i);if(bm<=0)continue;const cs=this.cos(qtf,i);let titleBoost=0;for(const t of new Set(qterms))if(this.titleTokens[i].has(t))titleBoost+=2.5;scored.push([0.75*bm+6*cs+titleBoost,i]);}scored.sort((a,b)=>b[0]-a[0]);return scored.slice(0,k).map(([s,i])=>({score:s,...this.chunks[i]}));}
+ answer(query){const hits=this.retrieve(query);const qterms=tokenize(query);const uniq=[...new Set(qterms)];const oov=uniq.length?uniq.filter(t=>!this.df.has(t)).length/uniq.length:1;if(!hits.length||hits[0].score<0.6||oov>=0.5)return{refused:true,hits:[]};
+  const low=query.toLowerCase();let pref=null;
+  const qtok=tokenize(query).join(' ');const ei=hits.findIndex(h=>tokenize(h.title).join(' ')===qtok);if(ei>0){const[h]=hits.splice(ei,1);hits.unshift(h);}
+  if(/definition|what is|what are|meaning|define|kya hota|kya hai/.test(low))pref='definition';
+  else if(/how to|find|steps|calculate|solve|nikal/.test(low))pref='steps';
+  if(pref&&hits.length>1){const need=Math.min(uniq.length,2);const cov=h=>uniq.filter(t=>{const tt=new Set(tokenize(h.title+' '+(h.heading||'')));return tt.has(t);}).length;
+   const i=hits.findIndex(h=>cov(h)>=need&&(pref==='definition'?(h.heading||'').toLowerCase().includes('definition')||(h.heading||'').toLowerCase().includes('meaning'):((h.heading||'').toLowerCase().includes('steps')||(h.title||'').toLowerCase().startsWith('how to'))));if(i>0){const[h]=hits.splice(i,1);hits.unshift(h);}}
+  return{refused:false,hits};}
+}
+// ---- matrix calculator (audited v3) ----
+function parseMatrices(text){
+ const mats=[];let from=0;
+ while(true){const i=text.indexOf("[[",from);if(i<0)break;const j=text.indexOf("]]",i);if(j<0)break;
+  const block=text.slice(i,j+2);const rowStrs=block.match(/\[([^\[\]]+)\]/g);
+  if(rowStrs){const rows=rowStrs.map(r=>r.slice(1,-1).split(/[,\s]+/).filter(Boolean).map(Number));
+   if(rows.length&&rows.every(r=>r.length===rows[0].length&&r.length>=1&&r.every(v=>Number.isFinite(v))))mats.push(rows);}
+  from=j+2;}
+ return mats;
+}
+function fmt(M){return M.map(r=>"["+r.map(v=>Math.round(v*1000)/1000).join(", ")+"]").join("\n");}
+function rnd(v){return Math.round(v*1000)/1000;}
+function isSquare(A){return A.length===A[0].length;}
+function det(M){const n=M.length;if(n===1)return M[0][0];if(n===2)return M[0][0]*M[1][1]-M[0][1]*M[1][0];let s=0;for(let j=0;j<n;j++){const sub=M.slice(1).map(r=>r.filter((_,c)=>c!==j));s+=((j%2)?-1:1)*M[0][j]*det(sub);}return s;}
+function gjSolve(Aug){const m=Aug.map(r=>r.slice());const rows=m.length,cols=m[0].length;let r=0;const piv=[];for(let c=0;c<cols&&r<rows;c++){let p=r;for(let i=r+1;i<rows;i++)if(Math.abs(m[i][c])>Math.abs(m[p][c]))p=i;if(Math.abs(m[p][c])<1e-10)continue;[m[r],m[p]]=[m[p],m[r]];const d=m[r][c];for(let j=0;j<cols;j++)m[r][j]/=d;for(let i=0;i<rows;i++){if(i!==r&&Math.abs(m[i][c])>1e-12){const f=m[i][c];for(let j=0;j<cols;j++)m[i][j]-=f*m[r][j];}}piv.push(c);r++;}return{m,piv};}
+function inverseGJ(A){const n=A.length;const Aug=A.map((row,i)=>row.concat(A.map((_,j)=>i===j?1:0)));const{m,piv}=gjSolve(Aug);if(piv.length<n||piv.some((c,i)=>c!==i))return null;return m.map(row=>row.slice(n));}
+function pivotCols(A){const m=A.map(r=>r.slice());const rows=m.length,cols=m[0].length;let r=0;const piv=[];for(let c=0;c<cols&&r<rows;c++){let p=r;for(let i=r+1;i<rows;i++)if(Math.abs(m[i][c])>Math.abs(m[p][c]))p=i;if(Math.abs(m[p][c])<1e-10)continue;[m[r],m[p]]=[m[p],m[r]];for(let i=r+1;i<rows;i++){const f=m[i][c]/m[r][c];for(let j=c;j<cols;j++)m[i][j]-=f*m[r][j];}piv.push(c);r++;}return piv;}
+function rankOf(A){return pivotCols(A).length;}
+function rrefOf(A){return gjSolve(A.map(r=>r.slice())).m;}
+function refOf(A){const m=A.map(r=>r.slice());const rows=m.length,cols=m[0].length;let r=0;for(let c=0;c<cols&&r<rows;c++){let p=r;for(let i=r+1;i<rows;i++)if(Math.abs(m[i][c])>Math.abs(m[p][c]))p=i;if(Math.abs(m[p][c])<1e-10)continue;[m[r],m[p]]=[m[p],m[r]];for(let i=r+1;i<rows;i++){const f=m[i][c]/m[r][c];for(let j=c;j<cols;j++)m[i][j]-=f*m[r][j];}r++;}return m;}
+function matMul(A,B){return A.map((row,i)=>B[0].map((_,j)=>row.reduce((s,_,k)=>s+A[i][k]*B[k][j],0)));}
+function cofactorMatrix(A){const n=A.length;if(n===1)return[[1]];return A.map((row,i)=>row.map((_,j)=>{const sub=A.filter((_,r)=>r!==i).map(r=>r.filter((_,c)=>c!==j));return ((i+j)%2?-1:1)*det(sub);}));}
+function adjointOf(A){const C=cofactorMatrix(A);return C[0].map((_,j)=>C.map(r=>r[j]));}
+function luOf(A){const n=A.length;const U=A.map(r=>r.slice());const L=A.map((r,i)=>r.map((_,j)=>i===j?1:0));const P=A.map((r,i)=>r.map((_,j)=>i===j?1:0));
+ for(let k=0;k<n;k++){let p=k;for(let i=k+1;i<n;i++)if(Math.abs(U[i][k])>Math.abs(U[p][k]))p=i;if(Math.abs(U[p][k])<1e-12)return null;
+  if(p!==k){[U[p],U[k]]=[U[k],U[p]];[P[p],P[k]]=[P[k],P[p]];for(let j=0;j<k;j++){const t=L[p][j];L[p][j]=L[k][j];L[k][j]=t;}}
+  for(let i=k+1;i<n;i++){const f=U[i][k]/U[k][k];L[i][k]=f;for(let j=k;j<n;j++)U[i][j]-=f*U[k][j];}}
+ return{P,L,U};}
+function qrOf(A){const m=A.length,n=A[0].length;if(m<n)return null;const cols=[];for(let j=0;j<n;j++)cols.push(A.map(r=>r[j]));
+ const qcols=[];const R=Array.from({length:n},()=>Array(n).fill(0));
+ for(let j=0;j<n;j++){let v=cols[j].slice();for(let i=0;i<j;i++){R[i][j]=qcols[i].reduce((s,_,k)=>s+qcols[i][k]*cols[j][k],0);for(let k=0;k<m;k++)v[k]-=R[i][j]*qcols[i][k];}
+  const norm=Math.hypot(...v);if(norm<1e-10)return null;R[j][j]=norm;qcols.push(v.map(x=>x/norm));}
+ const Q=qcols[0].map((_,i)=>qcols.map(c=>c[i]));return{Q,R};}
+function nullSpaceOf(A){const{ m,piv}=gjSolve(A.map(r=>r.slice()));const n=A[0].length;const free=[];for(let c=0;c<n;c++)if(!piv.includes(c))free.push(c);
+ return free.map(f=>{const v=Array(n).fill(0);v[f]=1;piv.forEach((pc,row)=>{v[pc]=-m[row][f];});return v;});}
+function parseVectors(text){const out=[];const re=/\[([^\[\]]+)\]/g;let mm;while((mm=re.exec(text))!==null){const v=mm[1].split(/[,\s]+/).filter(Boolean).map(Number);if(v.length>=2&&v.every(x=>Number.isFinite(x)))out.push(v);}return out;}
+function parseEquations(q){
+ const segs=q.replace(/^.*?solve/i,"").split(/[,;]|\band\b/).map(s=>s.trim()).filter(s=>s.includes("=")&&/[xyz]/.test(s));
+ if(segs.length<2)return null;const varsSet=new Set();const parsed=[];
+ for(const s of segs){const[lhs,rhs]=s.split("=");const b=parseFloat(rhs);if(!Number.isFinite(b))return null;const coef={};const re=/([+-]?\s*\d*(?:\.\d+)?)\s*\*?\s*([xyz])/g;let t;let found=false;while((t=re.exec(lhs))!==null){found=true;let c=t[1].replace(/\s/g,"");let val=c===""||c==="+"?1:(c==="-"?-1:parseFloat(c));coef[t[2]]=(coef[t[2]]||0)+val;varsSet.add(t[2]);}if(!found)return null;parsed.push({coef,b});}
+ const vars=["x","y","z"].filter(v=>varsSet.has(v));if(vars.length!==parsed.length)return null;
+ return{A:parsed.map(p=>vars.map(v=>p.coef[v]||0)),b:parsed.map(p=>p.b),vars};
+}
+function solveWith(A,b){const n=A.length;const Aug=A.map((row,i)=>row.concat([b[i]]));const{m,piv}=gjSolve(Aug);for(let i=0;i<n;i++){if(m[i].slice(0,n).every(v=>Math.abs(v)<1e-9)&&Math.abs(m[i][n])>1e-9)return{none:true};}if(piv.length<n||piv.some((c,i)=>c!==i))return{infinite:true};return{x:m.map(r=>r[n])};}
+function eigen2(A){const tr=A[0][0]+A[1][1],d=det(A),disc=tr*tr-4*d;if(disc<0)return null;const s=Math.sqrt(disc);return{l1:(tr+s)/2,l2:(tr-s)/2,tr,d};}
+function evec2(A,L){const v1=[A[0][1],L-A[0][0]],v2=[L-A[1][1],A[1][0]];return(Math.abs(v1[0])>1e-9||Math.abs(v1[1])>1e-9)?v1:v2;}
+function tryCalc(q){
+ const low=q.toLowerCase();const mats=parseMatrices(q);
+ // --- solve a system ---
+ if(low.includes("solve")){
+   const eq=parseEquations(q);
+   if(eq){const r=solveWith(eq.A,eq.b);if(r.none)return{title:"System — Solve",text:"This system has no solution — the equations are inconsistent."};if(r.infinite)return{title:"System — Solve",text:"This system has infinitely many solutions — some variables are free."};return{title:"System — Solve",text:`Solved in matrix form Ax = b:\n\nAnswer: ${eq.vars.map((v,i)=>v+" = "+rnd(r.x[i])).join(", ")}`};}
+   if(mats.length>=2&&mats[1][0].length===1&&mats[1].length===mats[0].length){const A=mats[0],b=mats[1].map(r=>r[0]);const r=solveWith(A,b);if(r.none)return{title:"System — Solve",text:"No solution — the system is inconsistent."};if(r.infinite)return{title:"System — Solve",text:"There are infinitely many solutions."};return{title:"System — Solve",text:`Answer: ${r.x.map((v,i)=>"x"+(i+1)+" = "+rnd(v)).join(", ")}`};}
+ }
+ // --- vector operations ---
+ const vecs=parseVectors(q);
+ if(vecs.length&&(low.includes("dot")||low.includes("cross")||low.includes("norm")||low.includes("magnitude")||low.includes("unit vector")||low.includes("angle")||low.includes("projection")||low.includes("independent")||low.includes("add")||low.includes("subtract")||low.includes("sum")||low.includes("difference"))){
+   const u=vecs[0],v=vecs[1];
+   if(low.includes("independent")&&vecs.length>=2){const M=vecs[0].map((_,i)=>vecs.map(c=>c[i]));const r=rankOf(M);const indep=r===vecs.length;const msg=indep?"INDEPENDENT (rank equals the number of vectors).":"DEPENDENT (rank is less than the number of vectors).";return{title:"Linear Independence — Check",text:"Made the vectors into columns and found the rank: rank = "+r+", vectors = "+vecs.length+"\n\nAnswer: These vectors are linearly "+msg};}
+   if(low.includes("cross")&&v&&u.length===3&&v.length===3){const c=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];return{title:"Cross Product — Calculation",text:`u x v = (${c.map(rnd).join(", ")})`};}
+   if(low.includes("dot")&&v){const d=u.reduce((s,_,i)=>s+u[i]*v[i],0);return{title:"Dot Product — Calculation",text:`u . v = ${u.map((_,i)=>"("+u[i]+" x "+v[i]+")").join(" + ")}\n\nAnswer: ${rnd(d)}${d===0?"\nThe vectors are orthogonal (dot product = 0).":""}`};}
+   if(low.includes("projection")&&v){const uv=u.reduce((s,_,i)=>s+u[i]*v[i],0),vv=v.reduce((s,x)=>s+x*x,0);const p=v.map(x=>rnd(x*uv/vv));return{title:"Projection — Calculation",text:`proj of u onto v = ((u.v)/(v.v)) v\n\nAnswer: (${p.join(", ")})`};}
+   if(low.includes("angle")&&v){const uv=u.reduce((s,_,i)=>s+u[i]*v[i],0),nu=Math.hypot(...u),nv=Math.hypot(...v);const ang=Math.acos(Math.max(-1,Math.min(1,uv/(nu*nv))))*180/Math.PI;return{title:"Angle Between Vectors — Calculation",text:`cos(theta) = (u.v) / (||u|| ||v||)\n\nAnswer: theta = ${rnd(ang)} degrees`};}
+   if((low.includes("add")||low.includes("sum"))&&v&&!q.includes("[[")){if(u.length!==v.length)return"For vector addition, both vectors must have the same size.";return{title:"Vector Addition — Calculation",text:`u + v = (${u.map((x,i)=>rnd(x+v[i])).join(", ")})`};}
+   if((low.includes("subtract")||low.includes("difference"))&&v&&!q.includes("[[")){if(u.length!==v.length)return"For vector subtraction, both vectors must have the same size.";return{title:"Vector Subtraction — Calculation",text:`u - v = (${u.map((x,i)=>rnd(x-v[i])).join(", ")})`};}
+   if(!q.includes("[[")){const n=Math.hypot(...u);if(low.includes("unit")){return{title:"Unit Vector — Calculation",text:`||v|| = ${rnd(n)}\nUnit vector = v / ||v||\n\nAnswer: (${u.map(x=>rnd(x/n)).join(", ")})`};}return{title:"Magnitude — Calculation",text:`||v|| = sqrt(${u.map(x=>x+"^2").join(" + ")})\n\nAnswer: ${rnd(n)}`};}}
+ if(!mats.length)return null;
+ const A=mats[0];const sq=isSquare(A);
+ if(low.includes("characteristic polynomial")||low.includes("characteristic equation")){
+   if(!sq)return"The characteristic polynomial is defined only for a square matrix.";
+   if(A.length===2){const tr=A[0][0]+A[1][1],d=det(A);return{title:"Characteristic Polynomial — Calculation",text:`Matrix:\n${fmt(A)}\n\nFor 2x2: lambda^2 - (trace) lambda + det\n\nAnswer: lambda^2 - (${tr}) lambda + (${d})`};}
+   if(A.length===3){const t1=A[0][0]+A[1][1]+A[2][2];const A2=matMul(A,A);const t2=(t1*t1-(A2[0][0]+A2[1][1]+A2[2][2]))/2;const t3=det(A);return{title:"Characteristic Polynomial — Calculation",text:`Matrix:\n${fmt(A)}\n\nFor 3x3: lambda^3 - (trace) lambda^2 + (sum of principal minors) lambda - det\n\nAnswer: lambda^3 - (${rnd(t1)}) lambda^2 + (${rnd(t2)}) lambda - (${rnd(t3)})`};}
+   return"Characteristic polynomial calculation is available for 2x2 and 3x3 matrices.";
+ }
+ if(low.includes("diagonal")){
+   if(!sq)return"Diagonalization is defined only for a square matrix.";
+   if(A.length!==2)return"Diagonalization calculation is available for 2x2 in this version. The method is in the theory answer.";
+   const e=eigen2(A);if(!e)return{title:"Diagonalization — Check",text:"The eigenvalues are not real (they are complex), so real diagonalization is not possible."};
+   if(Math.abs(e.l1-e.l2)>1e-9){const v1=evec2(A,e.l1),v2=evec2(A,e.l2);const P=[[v1[0],v2[0]],[v1[1],v2[1]]];return{title:"Diagonalization — Calculation",text:`There are two distinct eigenvalues (${rnd(e.l1)} and ${rnd(e.l2)}), so the matrix is diagonalizable.\n\nD =\n${fmt([[e.l1,0],[0,e.l2]])}\n\nP (eigenvectors as columns) =\n${fmt(P)}\n\nCheck: A = P D P^-1`};}
+   const isScalarI=Math.abs(A[0][1])<1e-9&&Math.abs(A[1][0])<1e-9&&Math.abs(A[0][0]-A[1][1])<1e-9;
+   return{title:"Diagonalization — Check",text:isScalarI?"This matrix is already diagonal (a multiple of the identity), so it is diagonalizable.":"The eigenvalue repeats and there is only one independent eigenvector, so this matrix is NOT diagonalizable."};
+ }
+ if(low.includes("adjoint")||low.includes("adjugate")){if(!sq)return"The adjoint is defined only for a square matrix.";if(A.length>4)return"Adjoint calculation is available up to 4x4.";return{title:"Adjoint — Calculation",text:`Matrix:\n${fmt(A)}\n\nAdjoint = transpose of the cofactor matrix\n\nAnswer:\n${fmt(adjointOf(A))}`};}
+ if(low.includes("cofactor")){if(!sq)return"Cofactors are defined only for a square matrix.";if(A.length>4)return"Cofactor calculation is available up to 4x4.";return{title:"Cofactor Matrix — Calculation",text:`Matrix:\n${fmt(A)}\n\nAnswer (cofactor matrix):\n${fmt(cofactorMatrix(A))}`};}
+ if(low.includes("lu decomposition")||low.includes("lu factorization")){if(!sq)return"LU decomposition is for a square matrix.";const r=luOf(A);if(!r)return"LU decomposition could not be formed — the matrix is singular or a zero pivot appeared.";return{title:"LU Decomposition — Calculation",text:`P A = L U, where:\n\nP =\n${fmt(r.P)}\n\nL =\n${fmt(r.L)}\n\nU =\n${fmt(r.U)}`};}
+ if(low.includes("qr decomposition")){const r=qrOf(A);if(!r)return"QR could not be formed — the columns must be linearly independent and rows >= columns.";return{title:"QR Decomposition — Calculation",text:`A = Q R, jahan:\n\nQ =\n${fmt(r.Q)}\n\nR =\n${fmt(r.R)}`};}
+ if(low.includes("null space")||low.includes("nullspace")||low.includes("kernel")){const basis=nullSpaceOf(A);if(!basis.length)return{title:"Null Space — Calculation",text:`Matrix:\n${fmt(A)}\n\nThe null space is only {0} — Ax = 0 has just the solution x = 0 (the columns are independent).`};return{title:"Null Space — Calculation",text:`Matrix:\n${fmt(A)}\n\nBasis of the null space (${basis.length} vector):\n${basis.map(v=>"("+v.map(rnd).join(", ")+")").join("\n")}\n\nNullity = ${basis.length}`};}
+ if(low.includes("column space")){const piv=pivotCols(A);const basis=piv.map(c=>A.map(r=>r[c]));return{title:"Column Space — Calculation",text:`Matrix:\n${fmt(A)}\n\nBasis of the column space (pivot columns, rank = ${piv.length}):\n${basis.map(v=>"("+v.map(rnd).join(", ")+")").join("\n")}`};}
+ if(low.includes("row space")){const rr=rrefOf(A).filter(r=>r.some(v=>Math.abs(v)>1e-9));return{title:"Row Space — Calculation",text:`Matrix:\n${fmt(A)}\n\nBasis of the row space (non-zero rows of the RREF, rank = ${rr.length}):\n${rr.map(v=>"("+v.map(rnd).join(", ")+")").join("\n")}`};}
+ if(low.includes("independent")){const piv=pivotCols(A);const indep=piv.length===A[0].length;return{title:"Linear Independence — Check",text:`Matrix:\n${fmt(A)}\n\nRank = ${piv.length}, columns = ${A[0].length}\n\nAnswer: The columns are linearly ${indep?"INDEPENDENT.":"DEPENDENT."}`};}
+ if(low.includes("rank"))return{title:"Rank — Calculation",text:`Matrix:\n${fmt(A)}\n\nAnswer: Rank = ${rankOf(A)}`};
+ if(low.includes("reduced")||low.includes("rref"))return{title:"RREF — Calculation",text:`Matrix:\n${fmt(A)}\n\nReduced Row Echelon Form:\n${fmt(rrefOf(A))}`};
+ if(low.includes("row echelon")||low.includes("ref"))return{title:"Row Echelon Form — Calculation",text:`Matrix:\n${fmt(A)}\n\nRow Echelon Form:\n${fmt(refOf(A))}`};
+ if(low.includes("determinant")||/\bdet\b/.test(low)){if(!sq)return"The determinant is defined only for a square matrix. This matrix has order "+A.length+"x"+A[0].length+".";const d=det(A);if(A.length===2)return{title:"Determinant — Calculation",text:`Matrix:\n${fmt(A)}\n\nFormula (2x2): det = ad - bc\n= (${A[0][0]} x ${A[1][1]}) - (${A[0][1]} x ${A[1][0]})\n= ${A[0][0]*A[1][1]} - ${A[0][1]*A[1][0]}\n\nAnswer: ${rnd(d)}`};return{title:"Determinant — Calculation",text:`Matrix:\n${fmt(A)}\n\nBy cofactor expansion:\nAnswer: ${rnd(d)}`};}
+ if(low.includes("transpose")){const T=A[0].map((_,j)=>A.map(r=>r[j]));return{title:"Transpose — Calculation",text:`Original:\n${fmt(A)}\n\nTurn the rows into columns:\n${fmt(T)}`};}
+ if(low.includes("trace")){if(!sq)return"Trace is defined only for a square matrix — it needs diagonal elements. This matrix has order "+A.length+"x"+A[0].length+".";const tr=A.reduce((s,r,i)=>s+r[i],0);return{title:"Trace — Calculation",text:`Trace = sum of the diagonal elements\n= ${A.map((r,i)=>r[i]).join(" + ")}\n\nAnswer: ${tr}`};}
+ if(low.includes("inverse")){if(!sq)return"The inverse is defined only for a square matrix.";const inv=inverseGJ(A);if(!inv)return"The inverse does not exist — the determinant is 0, so the matrix is singular.";return{title:"Inverse — Calculation",text:`Matrix:\n${fmt(A)}\n\ndet = ${rnd(det(A))}\nUsing the Gauss-Jordan method:\n\nAnswer:\n${fmt(inv)}`};}
+ if(low.includes("eigen")){
+   if(!sq)return"Eigenvalues are defined only for a square matrix.";
+   if(A.length===3){const t1=A[0][0]+A[1][1]+A[2][2];const A2=matMul(A,A);const t2=(t1*t1-(A2[0][0]+A2[1][1]+A2[2][2]))/2;const t3=det(A);return{title:"Eigenvalues — 3x3 Method",text:`For the eigenvalues of a 3x3 matrix, first form the characteristic polynomial:\nlambda^3 - (${rnd(t1)}) lambda^2 + (${rnd(t2)}) lambda - (${rnd(t3)}) = 0\n\nThe roots of this cubic are the eigenvalues. Solving a cubic by hand is long — the steps are in the theory answer: ask 'How to find eigenvalues'.`};}
+   if(A.length!==2)return"Eigenvalue calculation is available for 2x2; for 3x3, the characteristic polynomial method is given.";
+   const e=eigen2(A);if(!e)return{title:"Eigenvalues — Calculation",text:`Characteristic equation: lambda^2 - (${A[0][0]+A[1][1]}) lambda + (${det(A)}) = 0\nThe discriminant is negative, so the eigenvalues are not real (they are complex).`};
+   return{title:"Eigenvalues — Calculation",text:`Matrix:\n${fmt(A)}\n\nCharacteristic equation: lambda^2 - trace lambda + det = 0\nlambda^2 - ${e.tr} lambda + ${e.d} = 0\n\nAnswer: for eigenvalue ${rnd(e.l1)}, eigenvector (${evec2(A,e.l1).map(rnd).join(", ")}), and for eigenvalue ${rnd(e.l2)}, eigenvector (${evec2(A,e.l2).map(rnd).join(", ")})`};}
+ const pm=q.match(/\^\s*(\d+)/);
+ if(pm||low.includes("power")||low.includes("square of")||low.includes("cube of")){
+   if(!sq)return"Matrix powers are defined only for a square matrix.";
+   let k=pm?parseInt(pm[1]):(low.includes("cube")?3:(low.includes("square")?2:(()=>{const m2=low.match(/power\s*(\d+)/);return m2?parseInt(m2[1]):null;})()));
+   if(!k||k<1||k>10)return"Give a power between 1 and 10, like [[1,2],[3,4]]^2 or 'square of [[1,2],[3,4]]'.";
+   let R=A.map(r=>r.slice());for(let i=1;i<k;i++)R=matMul(R,A);
+   return{title:"Matrix Power — Calculation",text:`A^${k} =\n${fmt(R)}`};}
+ if(mats.length>=2){const B=mats[1];
+   if(low.includes("multiply")||low.includes("product")){if(A[0].length!==B.length)return"Multiplication is not possible — the columns of A ("+A[0].length+") do not equal the rows of B ("+B.length+").";return{title:"Multiplication — Calculation",text:`A x B =\n${fmt(matMul(A,B))}`};}
+   if(low.includes("add")||low.includes("sum")||q.includes("+")){if(A.length!==B.length||A[0].length!==B[0].length)return"Addition is not possible — both matrices must have the same order.";const C=A.map((row,i)=>row.map((x,j)=>x+B[i][j]));return{title:"Addition — Calculation",text:`A + B =\n${fmt(C)}`};}
+   if(low.includes("subtract")||low.includes("difference")||low.includes("minus")){if(A.length!==B.length||A[0].length!==B[0].length)return"Subtraction is not possible — both matrices must have the same order.";const C=A.map((row,i)=>row.map((x,j)=>x-B[i][j]));return{title:"Subtraction — Calculation",text:`A - B =\n${fmt(C)}`};}
+ }
+ const sm=q.match(/(-?\d+(?:\.\d+)?)\s*(?:x|\*)\s*\[\[/);
+ if(sm){const k=parseFloat(sm[1]);const before=q.slice(0,sm.index);if(!/\[\[/.test(before)){const C=A.map(row=>row.map(x=>x*k));return{title:"Scalar Multiplication — Calculation",text:`${k} x A =\n${fmt(C)}`};}}
+ return null;
+}
+
+let idx = new RagIndex(DATA.chunks);
+function refreshCounts(){
+  document.getElementById("status").textContent = "Ready — " + DATA.chunks.length + " topics loaded.";
+  document.getElementById("topiccount").textContent = DATA.chunks.length + " topics";
+}
+refreshCounts();
+const threadEl = document.getElementById("thread");
+const GREETING = threadEl.innerHTML;
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function scrollThread(){threadEl.scrollTop = threadEl.scrollHeight;}
+function appendUser(t){threadEl.innerHTML += `<div class="msg user"><div class="bubble"><p>${esc(t)}</p></div><span class="uavatar">👤</span></div>`;scrollThread();}
+function appendBot(meta,text,refused,sources){threadEl.innerHTML += `<div class="msg bot"><span class="avatar">∑</span><div class="bubble${refused ? " refused" : ""}">${meta ? `<div class="meta">${esc(meta)}</div>` : ""}<p>${esc(text)}</p>${sources && sources.length ? `<div class="src">Sources: ${esc(sources.join(" · "))}</div>` : ""}</div></div>`;scrollThread();}
+function appendTyping(){threadEl.innerHTML += `<div class="msg bot" id="typing"><span class="avatar">∑</span><div class="bubble"><p class="typingdots">Thinking…</p></div></div>`;scrollThread();}
+function removeTyping(){const t = document.getElementById("typing"); if (t) t.remove();}
+function answerQuery(q){
+  const calc = tryCalc(q);
+  if (calc) { if (typeof calc === "string") return {meta:"Calculation", text:calc}; return {meta:calc.title, text:calc.text}; }
+  const res = idx.answer(q);
+  if (res.refused) return {refused:true, meta:"", text:"This is not in my Linear Algebra data, so I will not guess. Ask any Linear Algebra topic — matrix, vector, eigenvalue, vector space, transformation, anything."};
+  const top = res.hits[0];
+  return {meta: top.module + " · " + top.title, text: top.text, chunk: top, sources: res.hits.slice(1).map(h => h.module + " · " + h.title)};
+}
+// ---------- tutor state: follow-ups + practice ----------
+let lastChunk = null, lastMeta = "", lastPractice = null;
+function ri(a,b){return a + Math.floor(Math.random() * (b - a + 1));}
+function makePractice(){
+  const kind = ["det","dot","transpose","solve","trace"][ri(0,4)];
+  if (kind === "det") { const M = [[ri(-3,4),ri(-3,4)],[ri(-3,4),ri(-3,4)]]; const d = M[0][0]*M[1][1]-M[0][1]*M[1][0];
+    return {q:`Practice: Find the determinant of this matrix:\n${fmt(M)}`, a:`det = (${M[0][0]} x ${M[1][1]}) - (${M[0][1]} x ${M[1][0]}) = ${d}`}; }
+  if (kind === "dot") { const u = [ri(-3,5),ri(-3,5),ri(-3,5)], v = [ri(-3,5),ri(-3,5),ri(-3,5)]; const d = u[0]*v[0]+u[1]*v[1]+u[2]*v[2];
+    return {q:`Practice: Find the dot product: (${u.join(", ")}) . (${v.join(", ")})`, a:`= ${u[0]}x${v[0]} + ${u[1]}x${v[1]} + ${u[2]}x${v[2]} = ${d}`}; }
+  if (kind === "transpose") { const M = [[ri(-4,6),ri(-4,6),ri(-4,6)],[ri(-4,6),ri(-4,6),ri(-4,6)]]; const T = [[M[0][0],M[1][0]],[M[0][1],M[1][1]],[M[0][2],M[1][2]]];
+    return {q:`Practice: Write the transpose of this matrix:\n${fmt(M)}`, a:`Transpose:\n${fmt(T)}`}; }
+  if (kind === "trace") { const M = [[ri(-4,6),ri(-4,6),ri(-4,6)],[ri(-4,6),ri(-4,6),ri(-4,6)],[ri(-4,6),ri(-4,6),ri(-4,6)]]; const tr = M[0][0]+M[1][1]+M[2][2];
+    return {q:`Practice: Find the trace of this matrix:\n${fmt(M)}`, a:`Trace = ${M[0][0]} + ${M[1][1]} + ${M[2][2]} = ${tr}`}; }
+  const x = ri(-3,4), y = ri(-3,4); const a = ri(1,3), b = ri(1,3), c = ri(1,3), d = ri(-3,3) || 2;
+  return {q:`Practice: Solve: ${a}x + ${b}y = ${a*x+b*y}, ${c}x + ${d}y = ${c*x+d*y}`, a:`x = ${x}, y = ${y}`};
+}
+function handleFollowUp(q){
+  const low = q.toLowerCase();
+  if (/practice|quiz/.test(low)) { const p = makePractice(); lastPractice = p; return {meta:"Practice Question", text:p.q + "\n\nTry it yourself first. When you want to see the answer, type 'answer'."}; }
+  if (lastPractice && /^(answer|jawab|solution|ans)\b/.test(low)) { const p = lastPractice; lastPractice = null; return {meta:"Practice — Answer", text:p.a}; }
+  if (!lastChunk) return null;
+  if (/example|udaharan|misaal/.test(low)) { const t = lastChunk.text; const i = t.toLowerCase().indexOf("example");
+    if (i >= 0) return {meta:"Example — " + lastChunk.title, text:t.slice(i, i + 520)};
+    return {meta:lastMeta, text:t}; }
+  if (/detail|aur batao|aur samjhao|vistar|in detail/.test(low)) { const res = idx.answer(lastChunk.title); const second = res.hits.find(h => h.title !== lastChunk.title);
+    return {meta:"Detail — " + lastChunk.title, text:lastChunk.text + (second ? "\n\nRelated topic — " + second.title + ":\n" + second.text : "")}; }
+  if (/formula/.test(low)) { const t = lastChunk.text; const lines = t.split(". ").filter(s => /=|formula/i.test(s));
+    if (lines.length) return {meta:"Formula — " + lastChunk.title, text:lines.join(". ") + "."};
+    return {meta:lastMeta, text:t}; }
+  return null;
+}
+function showAnswer(a){ appendBot(a.meta, a.text, a.refused, a.sources); }
+function ask(q){ if(!q || !q.trim()) return; appendUser(q);
+  const fu = handleFollowUp(q); if (fu) { showAnswer(fu); return; }
+  appendTyping();
+  setTimeout(() => { removeTyping(); const a = answerQuery(q); if (a.chunk) { lastChunk = a.chunk; lastMeta = a.meta; } showAnswer(a); }, 420);
+}
+function submitChat(){ const inp = document.getElementById("q"); ask(inp.value); inp.value = ""; inp.focus(); }
+document.getElementById("go").addEventListener("click", submitChat);
+document.getElementById("q").addEventListener("keydown", e => { if (e.key === "Enter") submitChat(); });
+document.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => { ask(ch.dataset.q || ch.textContent); document.getElementById("chat").scrollIntoView({behavior:"smooth", block:"nearest"}); }));
+document.getElementById("clearchat").addEventListener("click", () => { threadEl.innerHTML = GREETING; lastChunk = null; lastPractice = null; scrollThread(); });
+function focusChat(){ document.getElementById("chat").scrollIntoView({behavior:"smooth"}); setTimeout(() => document.getElementById("q").focus(), 350); }
+document.getElementById("startchat").addEventListener("click", focusChat);
+document.getElementById("getstarted").addEventListener("click", focusChat);
+document.getElementById("exploretopics").addEventListener("click", () => document.getElementById("topics").scrollIntoView({behavior:"smooth"}));
+const searchEl = document.getElementById("topicsearch");
+searchEl.addEventListener("keydown", e => { if (e.key === "Enter" && searchEl.value.trim()) { ask(searchEl.value); searchEl.value = ""; focusChat(); } });
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); searchEl.focus(); } });
+// ---------- notes upload: apni knowledge base banao ----------
+let userChunks = [];
+try { userChunks = JSON.parse(localStorage.getItem("larag_user_chunks") || "[]"); } catch (e) { userChunks = []; }
+if (userChunks.length) { DATA.chunks.push(...userChunks); idx = new RagIndex(DATA.chunks); refreshCounts(); }
+function chunkText(text, name){
+  const paras = text.replace(/\r/g, "").split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  const out = []; let buf = "";
+  const flush = () => { if (buf.trim()) { const firstLine = buf.trim().split("\n")[0].slice(0, 60); out.push({module:"My Notes", title:firstLine || name, heading:firstLine || name, text:buf.trim(), source:"My Notes - " + (firstLine || name)}); } buf = ""; };
+  for (const para of paras) { if ((buf + "\n\n" + para).length > 600) flush(); buf = buf ? buf + "\n\n" + para : para; if (buf.length > 500) flush(); }
+  flush(); return out;
+}
+async function extractFileText(file){
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".pdf")) {
+    if (!window.pdfjsLib) throw new Error("PDF library could not load — internet is required.");
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const buf = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({data: buf}).promise;
+    let t = "";
+    for (let pg = 1; pg <= pdf.numPages; pg++) { const page = await pdf.getPage(pg); const tc = await page.getTextContent(); t += tc.items.map(i => i.str).join(" ") + "\n\n"; }
+    return t;
+  }
+  if (name.endsWith(".docx")) {
+    if (!window.mammoth) throw new Error("DOCX library could not load — internet is required.");
+    const buf = await file.arrayBuffer();
+    const r = await window.mammoth.extractRawText({arrayBuffer: buf});
+    return r.value;
+  }
+  return await file.text();
+}
+const noteHintEl = document.getElementById("notehint");
+document.getElementById("notefile").addEventListener("change", async e => {
+  const file = e.target.files[0]; if (!file) return;
+  noteHintEl.textContent = "Reading " + file.name + "…";
+  try {
+    const text = await extractFileText(file);
+    const cs = chunkText(text, file.name);
+    if (!cs.length) { noteHintEl.textContent = "No text could be extracted from " + file.name + "."; return; }
+    DATA.chunks.push(...cs); userChunks.push(...cs);
+    try { localStorage.setItem("larag_user_chunks", JSON.stringify(userChunks)); } catch (err) {}
+    idx = new RagIndex(DATA.chunks); refreshCounts();
+    noteHintEl.textContent = file.name + ": " + cs.length + " chunks added. Total topics: " + DATA.chunks.length + ".";
+    appendBot("Notes Added", file.name + ": " + cs.length + " chunks added to the knowledge base. You can now ask questions from your notes too.");
+  } catch (err) { noteHintEl.textContent = "Could not add notes: " + err.message; }
+  e.target.value = "";
+});
+if (typeof globalThis !== "undefined") { globalThis.__test = { RagIndex, tryCalc, DATA, answerQuery, ask, handleFollowUp, makePractice }; }
+// ---------- v2: image input + OCR ----------
+const imgfileEl = document.getElementById("imgfile");
+const previewEl = document.getElementById("preview");
+const progEl = document.getElementById("ocrprog");
+const ocrStatusEl = document.getElementById("ocrstatus");
+const ocrBoxEl = document.getElementById("ocrbox");
+const ocrGoEl = document.getElementById("ocrgo");
+const imgopEl = document.getElementById("imgop");
+function matrixFromOcr(text){
+  const rows = [];
+  for (const line of text.split(/\n/)) {
+    const nums = (line.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+    if (nums.length >= 2) rows.push(nums);
+  }
+  for (let n = 3; n >= 2; n--) {
+    for (let i = 0; i + n <= rows.length; i++) {
+      const cand = rows.slice(i, i + n);
+      if (cand.every(r => r.length >= n)) return cand.map(r => r.slice(0, n));
+    }
+  }
+  const all = (text.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+  if (all.length === 4) return [[all[0], all[1]], [all[2], all[3]]];
+  if (all.length === 9) return [[all[0], all[1], all[2]], [all[3], all[4], all[5]], [all[6], all[7], all[8]]];
+  return null;
+}
+function askImageText(text){
+  appendUser("📷 Read from photo: " + text.slice(0, 160));
+  const low = text.toLowerCase();
+  const calcDirect = tryCalc(text);
+  if (calcDirect) { if (typeof calcDirect === "string") appendBot("Calculation", calcDirect); else appendBot(calcDirect.title, calcDirect.text); return; }
+  let M = parseMatrices(text)[0] || matrixFromOcr(text);
+  if (M) {
+    const ms = "[[" + M.map(r => r.join(",")).join("],[") + "]]";
+    const op = imgopEl ? imgopEl.value : "auto";
+    if (op !== "auto") { const c = tryCalc(op + " of " + ms); if (c) { if (typeof c === "string") appendBot("Calculation", c); else appendBot(c.title, c.text); return; } }
+    if (low.includes("determinant") || /\bdet\b/.test(low)) { const c = tryCalc("determinant of " + ms); if (c) { appendBot(c.title, c.text); return; } }
+    if (low.includes("inverse")) { const c = tryCalc("inverse of " + ms); if (c) { if (typeof c === "string") appendBot("Calculation", c); else appendBot(c.title, c.text); return; } }
+    if (low.includes("eigen")) { const c = tryCalc("eigenvalues of " + ms); if (c) { if (typeof c === "string") appendBot("Calculation", c); else appendBot(c.title, c.text); return; } }
+    if (low.includes("transpose")) { const c = tryCalc("transpose of " + ms); if (c) { appendBot(c.title, c.text); return; } }
+    if (low.includes("trace")) { const c = tryCalc("trace of " + ms); if (c) { appendBot(c.title, c.text); return; } }
+    const T = M[0].map((_, j) => M.map(r => r[j]));
+    appendBot("Matrix Photo — Summary", `Matrix read from the photo:\n${fmt(M)}\n\nDeterminant: ${Math.round(det(M) * 1000) / 1000}\nTrace: ${M.reduce((s, r, i) => s + r[i], 0)}\nTranspose:\n${fmt(T)}`);
+    return;
+  }
+  let q = text;
+  if (low.includes("slogdet")) q = "Determinant using slogdet method";
+  else if (low.includes("scipy") || low.includes("lu decomposition")) q = "Determinant using LU decomposition";
+  else if (low.includes("numpy") && low.includes("det")) q = "Determinant using numpy det";
+  const a = answerQuery(q);
+  appendBot(a.meta, a.text, a.refused);
+}
+let lastFile = null, rotAngle = 0;
+async function ocrImage(file){
+  if (!file) return;
+  if (file !== lastFile) { rotAngle = 0; lastFile = file; }
+  previewEl.src = URL.createObjectURL(file);
+  previewEl.style.display = "block";
+  ocrBoxEl.style.display = "none"; ocrGoEl.style.display = "none";
+  if (typeof Tesseract === "undefined") { ocrStatusEl.textContent = "The OCR library could not load — internet is required the first time. Turn on the net and select the photo again."; return; }
+  ocrStatusEl.textContent = "Photo padh raha hoon (OCR chal raha hai)…";
+  progEl.style.display = "block"; progEl.value = 0;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(2, 1600 / Math.max(1, bmp.width));
+    const rot = ((rotAngle % 360) + 360) % 360;
+    const swap = rot === 90 || rot === 270;
+    const cv = document.createElement("canvas");
+    cv.width = Math.round((swap ? bmp.height : bmp.width) * scale); cv.height = Math.round((swap ? bmp.width : bmp.height) * scale);
+    const cx = cv.getContext("2d");
+    cx.fillStyle = "#fff"; cx.fillRect(0, 0, cv.width, cv.height);
+    cx.translate(cv.width / 2, cv.height / 2); cx.rotate(rot * Math.PI / 180);
+    cx.drawImage(bmp, -bmp.width * scale / 2, -bmp.height * scale / 2, bmp.width * scale, bmp.height * scale);
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    const img = cx.getImageData(0, 0, cv.width, cv.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; const v = g > 150 ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; }
+    cx.putImageData(img, 0, 0);
+    const res = await Tesseract.recognize(cv, "eng", { logger: m => { if (m.status === "recognizing text") progEl.value = m.progress; } });
+    const text = (res.data.text || "").trim();
+    progEl.style.display = "none";
+    if (!text) { ocrStatusEl.textContent = "No text could be read from this photo. Try a clear, straight photo."; return; }
+    const conf = Math.round(res.data.confidence || 0);
+    ocrStatusEl.textContent = "Text read from the photo (OCR confidence: " + conf + "%)" + (conf < 70 ? " — confidence is low, check the text carefully and correct it:" : " — if anything is wrong, correct it and press the button:");
+    ocrBoxEl.value = text; ocrBoxEl.style.display = "block"; ocrGoEl.style.display = "inline-block";
+  } catch (err) { progEl.style.display = "none"; ocrStatusEl.textContent = "There was a problem with OCR. Please try again."; }
+}
+imgfileEl.addEventListener("change", () => ocrImage(imgfileEl.files[0]));
+ocrGoEl.addEventListener("click", () => { const t = ocrBoxEl.value.trim(); if (t) askImageText(t); });
+document.addEventListener("paste", e => { const it = [...(e.clipboardData || {}).items || []].find(i => i.type.startsWith("image/")); if (it) ocrImage(it.getAsFile()); });
+const chatPanelEl = document.getElementById("chat");
+chatPanelEl.addEventListener("dragover", e => { e.preventDefault(); chatPanelEl.classList.add("dragover"); });
+chatPanelEl.addEventListener("dragleave", () => chatPanelEl.classList.remove("dragover"));
+chatPanelEl.addEventListener("drop", e => { e.preventDefault(); chatPanelEl.classList.remove("dragover"); const f = [...e.dataTransfer.files].find(f => f.type.startsWith("image/")); if (f) ocrImage(f); });
+document.getElementById("ocrrotate").addEventListener("click", () => { if (!lastFile) { ocrStatusEl.textContent = "Select a photo first, then rotate."; return; } rotAngle = (rotAngle + 90) % 360; ocrImage(lastFile); });
+if (typeof globalThis !== "undefined" && globalThis.__test) { globalThis.__test.askImageText = askImageText; }
+
+</script>
+</body></html>
