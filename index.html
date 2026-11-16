@@ -113,7 +113,7 @@ footer{color:#5d5778;font-size:12.5px;text-align:center;padding:22px 0 4px}
 }
 
 /* ---- v2 photo / OCR ---- */
-.ocrzone{margin:10px 14px 0;background:var(--panel);border:1px dashed var(--line2);border-radius:14px;padding:12px 14px}
+.ocrzone{display:none}
 .ocrzone .hint{font-size:12.5px;color:var(--dim);margin:0}
 #preview{max-width:100%;max-height:220px;border-radius:10px;margin:0 0 10px;display:none;border:1px solid var(--line)}
 #ocrprog{width:100%;margin:0 0 10px;display:none;accent-color:var(--purple)}
@@ -912,7 +912,6 @@ function matrixFromOcr(text){
   return null;
 }
 function askImageText(text){
-  appendUser("📷 Read from photo: " + text.slice(0, 160));
   const low = text.toLowerCase();
   const calcDirect = tryCalc(text);
   if (calcDirect) { if (typeof calcDirect === "string") appendBot("Calculation", calcDirect); else appendBot(calcDirect.title, calcDirect.text); return; }
@@ -941,12 +940,13 @@ let lastFile = null, rotAngle = 0;
 async function ocrImage(file){
   if (!file) return;
   if (file !== lastFile) { rotAngle = 0; lastFile = file; }
-  previewEl.src = URL.createObjectURL(file);
-  previewEl.style.display = "block";
-  ocrBoxEl.style.display = "none"; ocrGoEl.style.display = "none";
-  if (typeof Tesseract === "undefined") { ocrStatusEl.textContent = "The OCR library could not load — internet is required the first time. Turn on the net and select the photo again."; return; }
-  ocrStatusEl.textContent = "Reading the photo (OCR is running)…";
-  progEl.style.display = "block"; progEl.value = 0;
+  const objUrl = URL.createObjectURL(file);
+  previewEl.src = objUrl;
+  threadEl.innerHTML += `<div class="msg user"><div class="bubble" style="padding:6px"><img src="${objUrl}" alt="Question photo" style="max-width:230px;width:100%;border-radius:10px;display:block"></div><span class="uavatar">👤</span></div>`;
+  scrollThread();
+  appendTyping();
+  if (typeof Tesseract === "undefined") { removeTyping(); appendBot("Photo", "The OCR library could not load — internet is required the first time. Turn on the net and select the photo again."); return; }
+  progEl.value = 0;
   try {
     const bmp = await createImageBitmap(file);
     const scale = Math.min(2, 1600 / Math.max(1, bmp.width));
@@ -965,12 +965,13 @@ async function ocrImage(file){
     const res = await Tesseract.recognize(cv, "eng", { workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/worker.min.js", corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0", langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int", logger: m => { if (m.status === "recognizing text") progEl.value = m.progress; } });
     const text = (res.data.text || "").trim();
     progEl.style.display = "none";
-    if (!text) { ocrStatusEl.textContent = "No text could be read from this photo. Try a clear, straight photo."; return; }
+    if (!text) { removeTyping(); appendBot("Photo", "No text could be read from this photo. Try a clear, straight photo, or type the question."); return; }
     const conf = Math.round(res.data.confidence || 0);
-    ocrStatusEl.textContent = "Text read from the photo (OCR confidence: " + conf + "%)" + (conf < 70 ? " — confidence is low, so the answer below may use misread numbers. If anything looks wrong, correct the text and press 'Answer this text' again:" : " — the answer is below. If anything is wrong, correct the text and press 'Answer this text' again:");
+    ocrBoxEl.value = text;
+    removeTyping();
+    if (conf < 70) appendBot("", "The photo was not fully clear (OCR confidence: " + conf + "%), so some numbers may be misread. If the answer looks wrong, a clearer, straight photo will read better.");
     askImageText(text);
-    ocrBoxEl.value = text; ocrBoxEl.style.display = "block"; ocrGoEl.style.display = "inline-block";
-  } catch (err) { progEl.style.display = "none"; ocrStatusEl.textContent = "There was a problem with OCR. Please try again."; }
+  } catch (err) { progEl.style.display = "none"; removeTyping(); appendBot("Photo", "There was a problem reading this photo. Please try again."); }
 }
 imgfileEl.addEventListener("change", () => ocrImage(imgfileEl.files[0]));
 ocrGoEl.addEventListener("click", () => { const t = ocrBoxEl.value.trim(); if (t) askImageText(t); });
